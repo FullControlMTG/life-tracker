@@ -70,8 +70,30 @@ export function luminance(hex: string): number {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
 }
 
+/** The two inks a seat can use. Text is white unless the seat is light enough
+ *  that dark text reads better. */
+export const LIGHT_INK = '#f8fafc'
+export const DARK_INK = '#0f172a'
+
+/** WCAG contrast ratio between two colours, 1:1 to 21:1. */
+export function contrastRatio(a: string, b: string): number {
+  const la = luminance(a)
+  const lb = luminance(b)
+  const lighter = Math.max(la, lb)
+  const darker = Math.min(la, lb)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+/**
+ * Picks whichever ink actually contrasts better against the seat colour.
+ *
+ * Comparing the two ratios puts the switch at the point where they cross
+ * (luminance ~0.19), so the worst case any seat can hit is ~4.1:1. A fixed
+ * threshold gets this wrong: too high and a mid-light seat keeps white text at
+ * ~2.3:1, which is what "unreadable on lighter colours" looks like.
+ */
 export function readableInk(hex: string): string {
-  return luminance(hex) > 0.42 ? '#0f172a' : '#f8fafc'
+  return contrastRatio(hex, LIGHT_INK) >= contrastRatio(hex, DARK_INK) ? LIGHT_INK : DARK_INK
 }
 
 export function isHex(value: string): boolean {
