@@ -10,6 +10,9 @@ type Outcome =
   | { kind: 'flip'; result: FlipResult }
   | null
 
+/** The counts worth one tap; anything else is reached with the + button. */
+const COUNT_PRESETS = [1, 2, 3, 4, 6]
+
 /**
  * The button in the middle of the table, where every player can reach it.
  *
@@ -37,6 +40,8 @@ export function TableMenu() {
     setConfirmingNewGame(false)
   }
 
+  const offPreset = !COUNT_PRESETS.includes(count)
+
   return (
     <>
       <button
@@ -62,20 +67,33 @@ export function TableMenu() {
             <div className="table-panel-body">
               {outcome && <Outcome outcome={outcome} />}
 
-              <p className="table-label">How many</p>
+              {/* The chosen count has to be readable without parsing a button
+                  caption, so it gets its own numeral beside the label - and it
+                  is echoed into every action below (3d20, "Flip 3 coins") so the
+                  choice is visible wherever the eye lands. */}
+              <div className="label-row">
+                <p className="table-label">How many</p>
+                <span className="count-readout" aria-live="polite">
+                  {count}
+                </span>
+              </div>
               <div className="count-row">
-                {[1, 2, 3, 4, 6].map((n) => (
+                {COUNT_PRESETS.map((n) => (
                   <button
                     key={n}
                     className={`big-btn count${count === n ? ' is-active' : ''}`}
+                    aria-pressed={count === n}
                     onClick={() => setCount(n)}
                   >
                     {n}
                   </button>
                 ))}
+                {/* Active whenever the count is off-preset, so the row never
+                    looks as though nothing is chosen. */}
                 <button
-                  className="big-btn count"
-                  aria-label="More"
+                  className={`big-btn count${offPreset ? ' is-active' : ''}`}
+                  aria-label={`One more, currently ${count}`}
+                  disabled={count >= MAX_ROLL_COUNT}
                   onClick={() => setCount((c) => Math.min(MAX_ROLL_COUNT, c + 1))}
                 >
                   +
@@ -88,9 +106,10 @@ export function TableMenu() {
                   <button
                     key={d}
                     className="big-btn die"
+                    aria-label={count === 1 ? `Roll a d${d}` : `Roll ${count} d${d}`}
                     onClick={() => setOutcome({ kind: 'roll', result: rollDice(d, count) })}
                   >
-                    d{d}
+                    {count === 1 ? `d${d}` : `${count}d${d}`}
                   </button>
                 ))}
               </div>
@@ -103,33 +122,39 @@ export function TableMenu() {
                 {count === 1 ? 'Flip a coin' : `Flip ${count} coins`}
               </button>
 
-              <p className="table-label">Game</p>
-              <button className="big-btn wide" onClick={() => { restartGame(); close() }}>
-                Reset life totals
-              </button>
+              {/* Session controls, recessed into the panel's foot and quieter
+                  than the dice: reaching for a roll must never land on one. */}
+              <section className="game-section">
+                <p className="table-label">Game</p>
 
-              {/* Confirmed inline rather than with confirm(): a browser modal can
-                  drop the page out of fullscreen. */}
-              {confirmingNewGame ? (
-                <div className="confirm" role="alertdialog" aria-label="Start a new game?">
-                  <p className="confirm-text">
-                    Start over? This ends the game for {seats.length}{' '}
-                    {seats.length === 1 ? 'player' : 'players'} and clears their life totals.
-                  </p>
-                  <div className="confirm-actions">
-                    <button className="big-btn" onClick={() => setConfirmingNewGame(false)}>
-                      Keep playing
+                {/* Confirmed inline rather than with confirm(): a browser modal
+                    can drop the page out of fullscreen. */}
+                {confirmingNewGame ? (
+                  <div className="confirm" role="alertdialog" aria-label="Start a new game?">
+                    <p className="confirm-text">
+                      Start over? This ends the game for {seats.length}{' '}
+                      {seats.length === 1 ? 'player' : 'players'} and clears their life totals.
+                    </p>
+                    <div className="confirm-actions">
+                      <button className="big-btn" onClick={() => setConfirmingNewGame(false)}>
+                        Keep playing
+                      </button>
+                      <button className="big-btn danger" onClick={() => { newGame(); close() }}>
+                        New game
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="game-actions">
+                    <button className="big-btn quiet" onClick={() => { restartGame(); close() }}>
+                      Reset life totals
                     </button>
-                    <button className="big-btn danger" onClick={() => { newGame(); close() }}>
+                    <button className="big-btn quiet" onClick={() => setConfirmingNewGame(true)}>
                       New game
                     </button>
                   </div>
-                </div>
-              ) : (
-                <button className="big-btn wide" onClick={() => setConfirmingNewGame(true)}>
-                  New game
-                </button>
-              )}
+                )}
+              </section>
             </div>
           </div>
         </div>

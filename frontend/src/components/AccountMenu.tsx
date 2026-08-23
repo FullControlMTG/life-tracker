@@ -28,8 +28,9 @@ export function AccountMenu() {
     }
   }, [open])
 
-  const { auth, logout } = useStore()
+  const { auth, logout, remote } = useStore()
   const fullscreen = useFullscreen()
+  const profileCount = remote?.profiles.length ?? 0
 
   return (
     <div className="account" ref={wrap}>
@@ -86,7 +87,13 @@ export function AccountMenu() {
               <p className="muted">
                 Signed in as <strong>{auth.user?.displayName}</strong>
               </p>
-              <ProfileManager />
+              {/* The saved players live in Settings, not here: the list has no
+                  upper bound and this panel hangs over a live game. */}
+              <p className="muted">
+                {profileCount === 0
+                  ? 'No saved players yet.'
+                  : `${profileCount} saved ${profileCount === 1 ? 'player' : 'players'} — manage them in Settings.`}
+              </p>
               <button className="btn subtle wide" onClick={() => { void logout(); setOpen(false) }}>
                 Sign out
               </button>
@@ -196,35 +203,5 @@ function AuthForm() {
         {mode === 'login' ? 'Need an account?' : 'Already have an account?'}
       </button>
     </form>
-  )
-}
-
-function ProfileManager() {
-  const { remote, deleteProfile } = useStore()
-  const profiles = remote?.profiles ?? []
-  if (profiles.length === 0) {
-    return <p className="muted">No saved players yet. Save one from a seat’s ⋯ menu.</p>
-  }
-  return (
-    <div className="profile-list">
-      {profiles.map((p) => (
-        <div key={p.id} className="profile-row">
-          <span className="profile-dot" style={{ background: p.color }} />
-          <span className="profile-name">{p.displayName}</span>
-          <span className="profile-swatches">
-            {p.savedColors.slice(0, 8).map((c) => (
-              <i key={c} style={{ background: c }} />
-            ))}
-          </span>
-          <button
-            className="btn icon ghost"
-            aria-label={`Delete ${p.displayName}`}
-            onClick={() => void deleteProfile(p.id).catch(() => {})}
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-    </div>
   )
 }

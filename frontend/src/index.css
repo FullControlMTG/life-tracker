@@ -419,8 +419,41 @@ select {
   touch-action: manipulation;
 }
 
-/* The art fills the unrotated rectangle and is cropped by cover - never
-   stretched. object-position is the focal point chosen in the art picker. */
+/* The background rotates with its player, so a card reads the right way up to
+   the person sitting there rather than to whoever holds the device. Sizing
+   mirrors .seat-rotor: a quarter-turned frame swaps width and height so it
+   still covers the seat exactly after rotation. Because the frame is the
+   player's own rectangle, cover crops and object-position resolve in the
+   player's frame too - which is the frame the art picker previews. */
+.seat-art-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100cqw;
+  height: 100cqh;
+  transform: translate(-50%, -50%);
+}
+
+.seat[data-rot='180'] .seat-art-frame {
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.seat[data-rot='90'] .seat-art-frame,
+.seat[data-rot='270'] .seat-art-frame {
+  width: 100cqh;
+  height: 100cqw;
+}
+
+.seat[data-rot='90'] .seat-art-frame {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.seat[data-rot='270'] .seat-art-frame {
+  transform: translate(-50%, -50%) rotate(270deg);
+}
+
+/* Cropped by cover - never stretched. object-position is the focal point
+   chosen in the art picker. */
 .seat-art {
   position: absolute;
   inset: 0;
@@ -429,6 +462,8 @@ select {
   object-fit: cover;
 }
 
+/* Darkest at the player's own top and bottom, where the name and counters sit,
+   because the veil rides inside the rotated frame. */
 .seat-veil {
   position: absolute;
   inset: 0;
@@ -1126,6 +1161,16 @@ select {
   background: rgba(252, 165, 165, 0.28);
 }
 
+.btn.danger {
+  border-color: rgba(252, 165, 165, 0.55);
+  background: rgba(252, 165, 165, 0.18);
+  color: var(--danger);
+}
+
+.btn.danger:hover:not(:disabled) {
+  background: rgba(252, 165, 165, 0.28);
+}
+
 /* --- settings ------------------------------------------------------------ */
 
 .settings-row {
@@ -1297,12 +1342,17 @@ select {
   transition: background 120ms ease, transform 120ms ease;
 }
 
-.big-btn:hover {
+.big-btn:hover:not(:disabled) {
   background: var(--raise-hi);
 }
 
-.big-btn:active {
+.big-btn:active:not(:disabled) {
   transform: scale(0.97);
+}
+
+.big-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .big-btn.is-active {
@@ -1313,6 +1363,22 @@ select {
 .big-btn.wide {
   width: 100%;
   margin-bottom: 0.5rem;
+}
+
+/* Puts the live count on the same baseline as the label it belongs to. */
+.label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.count-readout {
+  font-family: var(--numerals);
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1;
+  color: var(--accent);
 }
 
 .count-row {
@@ -1327,8 +1393,43 @@ select {
   gap: 0.4rem;
 }
 
+/* Captions grow to 20d100, so these shrink rather than burst the grid. */
 .big-btn.die {
   font-family: var(--numerals);
+  min-width: 0;
+  padding-inline: 0.35rem;
+}
+
+/* --- game section --------------------------------------------------------- */
+
+/* Ending or resetting a game is not a play action. It sits in a recessed foot,
+   full-bleed across the panel, so it reads as a different kind of control from
+   the dice above it. */
+.game-section {
+  margin: 1.5rem -0.9rem -1rem;
+  padding: 0.1rem 0.9rem 0.9rem;
+  border-top: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.game-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+/* Deliberately lighter than .big-btn: reachable, but not inviting. */
+.big-btn.quiet {
+  min-height: 2.9rem;
+  padding-inline: 0.5rem;
+  font-size: 0.92rem;
+  background: transparent;
+  color: var(--ink-dim);
+}
+
+.big-btn.quiet:hover:not(:disabled) {
+  background: var(--raise);
+  color: var(--ink);
 }
 
 .outcome {
@@ -1486,12 +1587,53 @@ select {
   border-top: 1px solid var(--line);
 }
 
+/* --- saved players (Settings) -------------------------------------------- */
+
+.disclosure {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--raise);
+  text-align: left;
+  transition: background 120ms ease;
+}
+
+.disclosure:hover {
+  background: var(--raise-hi);
+}
+
+.disclosure-caret {
+  color: var(--ink-dim);
+  transition: transform 140ms ease;
+}
+
+.disclosure[aria-expanded='true'] .disclosure-caret {
+  transform: rotate(90deg);
+}
+
+.disclosure-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.profile-drawer {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.6rem 0 0;
+}
+
 .profile-list {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   display: grid;
   gap: 0.25rem;
-  max-height: 240px;
+  /* The list is unbounded, so it scrolls inside the panel rather than pushing
+     the panel past its own max-height. */
+  max-height: 40vmin;
   overflow-y: auto;
 }
 
@@ -1499,6 +1641,7 @@ select {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  min-height: 2.25rem;
 }
 
 .profile-dot {

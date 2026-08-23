@@ -14,11 +14,12 @@ import { useHold } from './useHold'
  * One player's area.
  *
  * The outer element is the real rectangle from the split tree and stays
- * unrotated, so a card background can fill it with object-fit: cover - cropped
- * on whichever axis overflows, never stretched. Everything readable lives in
- * `.seat-rotor`, which is rotated to face that player's edge. Container query
- * units (100cqh/100cqw) give the rotated frame its swapped dimensions without
- * measuring anything in JS.
+ * unrotated. Everything else is rotated to face that player's edge: the
+ * artwork in `.seat-art-frame` and everything readable in `.seat-rotor`. Both
+ * get their swapped dimensions from container query units (100cqh/100cqw)
+ * rather than from measuring anything in JS, so a quarter-turned frame still
+ * covers the rectangle exactly and object-fit: cover crops the art on
+ * whichever axis overflows - in the player's own orientation, never stretched.
  */
 export function Seat({ seat, guards = [] }: { seat: SeatState; guards?: ScreenEdge[] }) {
   const adjustLife = useStore((s) => s.adjustLife)
@@ -43,15 +44,19 @@ export function Seat({ seat, guards = [] }: { seat: SeatState; guards?: ScreenEd
       }}
       aria-label={`${seat.name}, ${seat.life} life`}
     >
-      {seat.background === 'image' && seat.card && (
-        <img
-          className="seat-art"
-          src={seat.card.imageUri}
-          alt=""
-          style={{ objectPosition: `${seat.card.focusX * 100}% ${seat.card.focusY * 100}%` }}
-        />
+      {seat.background === 'image' && (
+        <div className="seat-art-frame">
+          {seat.card && (
+            <img
+              className="seat-art"
+              src={seat.card.imageUri}
+              alt=""
+              style={{ objectPosition: `${seat.card.focusX * 100}% ${seat.card.focusY * 100}%` }}
+            />
+          )}
+          <span className="seat-veil" />
+        </div>
       )}
-      {seat.background === 'image' && <span className="seat-veil" />}
 
       <div className="seat-rotor">
         <button className="tap-zone minus" aria-label={`${seat.name} lose 1 life`} {...minus}>
