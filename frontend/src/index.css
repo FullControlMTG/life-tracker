@@ -1,0 +1,902 @@
+/* ---------------------------------------------------------------------------
+   Life tracker
+   The look is deliberately flat: a smooth colour field, no cards or panels
+   except where something is genuinely floating above the game.
+--------------------------------------------------------------------------- */
+
+:root {
+  --bg-1: #0b1220;
+  --bg-2: #131c31;
+  --bg-3: #1b1533;
+  --ink: #e6ebf5;
+  --ink-dim: #94a3b8;
+  --line: rgba(255, 255, 255, 0.14);
+  --raise: rgba(255, 255, 255, 0.07);
+  --raise-hi: rgba(255, 255, 255, 0.14);
+  --accent: #7dd3fc;
+  --danger: #fca5a5;
+  --radius: 14px;
+  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --numerals: ui-rounded, 'SF Pro Rounded', ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--bg-1);
+  /* Stops the pull-to-refresh / rubber-band bounce while tapping life totals. */
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The smooth background field the setup screens sit on. */
+.app.phase-players,
+.app.phase-life,
+.app.phase-layout {
+  background:
+    radial-gradient(120% 90% at 12% 8%, var(--bg-3) 0%, transparent 58%),
+    radial-gradient(110% 80% at 88% 92%, #123244 0%, transparent 55%),
+    linear-gradient(160deg, var(--bg-2), var(--bg-1));
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.muted {
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+  margin: 0.35rem 0;
+  line-height: 1.45;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.82rem;
+  margin: 0.2rem 0 0;
+}
+
+/* --- buttons & fields ---------------------------------------------------- */
+
+.btn {
+  border-radius: 10px;
+  padding: 0.6rem 1.1rem;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--raise-hi);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #06283a;
+  font-weight: 650;
+}
+
+.btn.subtle {
+  padding: 0.45rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.btn.wide {
+  width: 100%;
+  justify-content: center;
+}
+
+.btn.link {
+  background: none;
+  border: 0;
+  padding: 0.3rem;
+  color: var(--ink-dim);
+  font-size: 0.83rem;
+  text-decoration: underline;
+}
+
+.btn.icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  opacity: 0.65;
+}
+
+.btn.ghost:hover {
+  opacity: 1;
+  background: var(--raise);
+}
+
+.field {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  outline-offset: 2px;
+}
+
+.field:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.field.narrow {
+  width: 6rem;
+  text-align: center;
+}
+
+.field-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.9rem 0;
+}
+
+.field-row > span:first-child {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.field-row.centered {
+  align-items: center;
+}
+
+.inline {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* --- setup steps --------------------------------------------------------- */
+
+.step {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.step-inner {
+  width: min(680px, 100%);
+  text-align: center;
+}
+
+.step-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.step-title {
+  margin: 0.4rem 0 1.6rem;
+  font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.step-note {
+  max-width: 46ch;
+  margin: -0.8rem auto 1.6rem;
+  color: var(--ink-dim);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.step-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 0.7rem;
+}
+
+.choice {
+  display: grid;
+  gap: 0.15rem;
+  padding: 1.1rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--raise);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.choice:hover {
+  background: var(--raise-hi);
+}
+
+.choice.is-active {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.14);
+}
+
+.choice-value {
+  font-family: var(--numerals);
+  font-size: 1.7rem;
+  font-weight: 650;
+}
+
+.choice-label {
+  font-size: 0.76rem;
+  color: var(--ink-dim);
+}
+
+/* --- orientation thumbnails ---------------------------------------------- */
+
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.9rem;
+}
+
+.layout-option {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.8rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--raise);
+}
+
+.layout-option.is-active {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.12);
+}
+
+.layout-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.layout-hint {
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+}
+
+.thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.thumb-split {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 3px;
+}
+
+.thumb-cell {
+  position: relative;
+  flex-basis: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.thumb-seat {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* Only the label rotates - the rectangle itself must stay in its cell. */
+.thumb-label {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.thumb-arrow {
+  font-size: 0.58rem;
+  color: var(--accent);
+}
+
+.thumb-num {
+  font-family: var(--numerals);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* --- split layout -------------------------------------------------------- */
+
+.split-root,
+.split {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.split {
+  gap: 2px;
+}
+
+.split-cell {
+  position: relative;
+  flex-basis: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* --- seat ---------------------------------------------------------------- */
+
+.seat {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* Makes 100cqw / 100cqh below resolve against this seat's real rectangle,
+     which is how the rotated frame gets its swapped dimensions with no JS. */
+  container-type: size;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* The art fills the unrotated rectangle and is cropped by cover - never
+   stretched. object-position is the focal point chosen in the art picker. */
+.seat-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.seat-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.25) 45%, rgba(0, 0, 0, 0.6));
+}
+
+/* Card art is unpredictable - a bright illustration can swallow white text - so
+   numbers over artwork always carry a shadow on top of the veil. */
+.seat[data-bg='image'] .seat-face {
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85), 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.seat-rotor {
+  position: absolute;
+  inset: 0;
+}
+
+.seat[data-rot='180'] .seat-rotor {
+  transform: rotate(180deg);
+}
+
+.seat[data-rot='90'] .seat-rotor,
+.seat[data-rot='270'] .seat-rotor {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 100cqh;
+  height: 100cqw;
+}
+
+.seat[data-rot='90'] .seat-rotor {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.seat[data-rot='270'] .seat-rotor {
+  transform: translate(-50%, -50%) rotate(270deg);
+}
+
+.tap-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: inherit;
+  opacity: 0;
+  font-size: clamp(1.4rem, 7cqmin, 3rem);
+  transition: opacity 140ms ease;
+}
+
+.tap-zone.minus { left: 0; }
+.tap-zone.plus { right: 0; }
+
+.seat:hover .tap-zone,
+.tap-zone:active {
+  opacity: 0.35;
+}
+
+.seat-face {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(0.4rem, 2cqmin, 1rem);
+  /* Taps fall through to the life zones; only real controls opt back in. */
+  pointer-events: none;
+}
+
+.seat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+
+.seat-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: clamp(0.7rem, 3cqmin, 1rem);
+  font-weight: 600;
+  opacity: 0.85;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.seat-head .btn {
+  pointer-events: auto;
+}
+
+.seat-life {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.life-value {
+  font-family: var(--numerals);
+  font-size: clamp(2.4rem, 34cqmin, 12rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.life-delta {
+  position: absolute;
+  top: 6%;
+  font-family: var(--numerals);
+  font-size: clamp(0.9rem, 8cqmin, 2rem);
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.seat-counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.counter {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.counter-step {
+  padding: 0.1rem 0.45rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  opacity: 0.7;
+}
+
+.counter-step:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.counter-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.1rem 0.15rem;
+  font-family: var(--numerals);
+  font-size: 0.82rem;
+}
+
+/* --- seat sheet ---------------------------------------------------------- */
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  background: rgba(2, 6, 14, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+/* Sized in vmin so the panel still fits the viewport once it is rotated a
+   quarter turn to face a player sitting along an edge. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 86vmin);
+  max-height: min(560px, 86vmin);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(11, 18, 32, 0.97);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.5rem 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs {
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.4rem 0.5rem 0;
+}
+
+.tab {
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+.tab.is-active {
+  background: var(--raise);
+  color: var(--ink);
+}
+
+.sheet-body {
+  flex: 1;
+  padding: 0.35rem 0.85rem 0.85rem;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.sheet-foot {
+  padding: 0 0.85rem 0.6rem;
+  margin: 0;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--raise);
+  font-size: 0.8rem;
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* --- colour picker ------------------------------------------------------- */
+
+.picker {
+  display: grid;
+  gap: 0.7rem;
+  padding-top: 0.4rem;
+}
+
+.slider {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.slider-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.slider-track {
+  position: relative;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  /* Keeps a drag from scrolling the sheet underneath it on touch. */
+  touch-action: none;
+  cursor: pointer;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.picker-chip {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+
+.picker-hex {
+  flex: 1;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: lowercase;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.3rem;
+}
+
+.swatch {
+  aspect-ratio: 1;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.swatch.is-active {
+  border-color: #fff;
+}
+
+/* --- card search --------------------------------------------------------- */
+
+.cardsearch {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.4rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.card-tile {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  overflow: hidden;
+  text-align: left;
+}
+
+.card-tile.is-active {
+  border-color: var(--accent);
+}
+
+.card-tile img {
+  width: 100%;
+  aspect-ratio: 626 / 457;
+  object-fit: cover;
+  display: block;
+  border-radius: 6px;
+}
+
+.card-tile span {
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  padding: 0 0.15rem 0.2rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.card-current {
+  display: grid;
+  gap: 0.4rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid var(--line);
+}
+
+.mini-slider {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+}
+
+.mini-slider input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* --- account menu -------------------------------------------------------- */
+
+.account {
+  position: absolute;
+  top: max(0.6rem, env(safe-area-inset-top));
+  right: max(0.6rem, env(safe-area-inset-right));
+  z-index: 20;
+}
+
+.account-trigger {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  background: rgba(10, 14, 24, 0.5);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  opacity: 0.7;
+  transition: opacity 140ms ease;
+}
+
+.account-trigger:hover,
+.account-trigger[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.account-panel {
+  position: absolute;
+  top: 2.9rem;
+  right: 0;
+  width: min(310px, calc(100vw - 1.2rem));
+  max-height: min(80vh, 620px);
+  overflow-y: auto;
+  padding: 0.4rem 0.85rem 0.85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(11, 18, 32, 0.96);
+  backdrop-filter: blur(16px);
+  text-align: left;
+}
+
+.panel-group {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.6rem 0;
+}
+
+.panel-group + .panel-group {
+  border-top: 1px solid var(--line);
+}
+
+.profile-list {
+  display: grid;
+  gap: 0.25rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.profile-dot {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.profile-name {
+  flex: 1;
+  font-size: 0.86rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.profile-swatches {
+  display: flex;
+  gap: 2px;
+}
+
+.profile-swatches i {
+  width: 7px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 1ms !important;
+  }
+}

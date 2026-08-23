@@ -1,0 +1,11 @@
+# Local development overlay. Everything is defined in docker-compose.yml; this
+# only publishes the database port so `make api` can reach it from the host.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d life-tracker-db
+#
+# Bound to loopback so the database is never exposed beyond this machine.
+
+services:
+  life-tracker-db:
+    ports:
+      - "127.0.0.1:5433:5432"

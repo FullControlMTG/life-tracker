@@ -1,0 +1,58 @@
+networks:
+  traefik:
+    external: true
+  internal:
+    name: life-tracker-internal
+    driver: bridge
+
+volumes:
+  life-tracker-db:
+
+services:
+  life-tracker:
+    container_name: life-tracker
+    build:
+      context: .
+      args:
+        VITE_API_BASE: /api/v1
+    restart: unless-stopped
+    depends_on:
+      life-tracker-db:
+        condition: service_healthy
+    environment:
+      APP_ENV: production
+      ADDR: :8080
+      DATABASE_URL: postgres://lifetracker:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@life-tracker-db:5432/lifetracker?sslmode=disable
+      SESSION_COOKIE_SECURE: "true"
+      SESSION_COOKIE_DOMAIN: ${APP_DOMAIN:-tracker.fullcontrolmtg.com}
+      SESSION_TTL: 720h
+    networks:
+      - traefik
+      - internal
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.life-tracker.rule=Host(`${APP_DOMAIN:-tracker.fullcontrolmtg.com}`)
+      - traefik.http.routers.life-tracker.tls=true
+      - traefik.http.routers.life-tracker.tls.certresolver=lets-encrypt
+      - traefik.http.services.life-tracker.loadbalancer.server.port=8080
+
+  # Only on the internal bridge, so the database is reachable from the app and
+  # nothing else. No published ports in this file.
+  life-tracker-db:
+    container_name: life-tracker-db
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lifetracker
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: lifetracker
+    volumes:
+      - life-tracker-db:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lifetracker -d lifetracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
