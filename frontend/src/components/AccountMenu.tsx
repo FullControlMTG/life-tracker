@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ApiError } from '../api/types'
 import { useStore } from '../state/store'
+import { SettingsPanel } from './SettingsPanel'
 import { useFullscreen } from './useFullscreen'
 
 /**
@@ -10,6 +11,7 @@ import { useFullscreen } from './useFullscreen'
  */
 export function AccountMenu() {
   const [open, setOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const wrap = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -41,12 +43,39 @@ export function AccountMenu() {
         {auth.status === 'authed' ? initials(auth.user?.displayName ?? '?') : '☰'}
       </button>
 
+      {/* Fullscreen can be dropped by Escape, a reload, or the iPadOS keyboard -
+          none of which the page can veto - so offer it back in one tap. */}
+      {fullscreen.supported && fullscreen.wanted && !fullscreen.active && (
+        <button className="restore-fullscreen" onClick={fullscreen.restore}>
+          <Expand />
+          Fullscreen
+        </button>
+      )}
+
       {open && (
         <div className="account-panel" role="menu">
+          <div className="panel-group">
+            <button
+              className="btn subtle wide"
+              onClick={() => {
+                setSettingsOpen(true)
+                setOpen(false)
+              }}
+            >
+              Settings
+            </button>
+          </div>
+
           {/* Not offered on iPhone Safari, which has no fullscreen API. */}
           {fullscreen.supported && (
             <div className="panel-group">
-              <button className="btn subtle wide" onClick={fullscreen.toggle}>
+              <button
+                className="btn subtle wide"
+                onClick={() => {
+                  fullscreen.toggle()
+                  setOpen(false)
+                }}
+              >
                 {fullscreen.active ? 'Exit fullscreen' : 'Enter fullscreen'}
               </button>
             </div>
@@ -67,7 +96,17 @@ export function AccountMenu() {
           )}
         </div>
       )}
+
+      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
     </div>
+  )
+}
+
+function Expand() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="currentColor">
+      <path d="M4 4h7v2H6v5H4V4zm9 0h7v7h-2V6h-5V4zM4 13h2v5h5v2H4v-7zm14 0h2v7h-7v-2h5v-5z" />
+    </svg>
   )
 }
 

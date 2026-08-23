@@ -26,9 +26,9 @@ export function GameScreen() {
     <>
       <SplitLayout
         root={preset.root}
-        renderSeat={(index) => {
+        renderSeat={(index, _facing, guards) => {
           const seat = seats[index]
-          return seat ? <Seat seat={seat} /> : null
+          return seat ? <Seat seat={seat} guards={guards} /> : null
         }}
       />
       <TableMenu />

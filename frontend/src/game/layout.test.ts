@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { LAYOUTS, facingOrder, seatCount } from './layout'
+import {
+  LAYOUTS,
+  edgeGuardSides,
+  facingOrder,
+  layoutById,
+  localSideFacing,
+  screenEdges,
+  seatCount,
+  seatRects,
+} from './layout'
 import type { Facing, LayoutNode } from './layout'
 
 interface Rect {
@@ -10,9 +19,9 @@ interface Rect {
   y1: number
 }
 
-/** Walks the tree the same way flexbox does, producing each seat's rectangle in
- *  normalised 0-1 screen coordinates. */
-function seatRects(node: LayoutNode, box: Rect = { x0: 0, y0: 0, x1: 1, y1: 1 }): {
+/** An independent re-derivation of the seat rectangles, kept separate from the
+ *  implementation on purpose: if both used the same code a bad edit would pass. */
+function seatRectsOracle(node: LayoutNode, box: Rect = { x0: 0, y0: 0, x1: 1, y1: 1 }): {
   facing: Facing
   rect: Rect
 }[] {
@@ -39,7 +48,7 @@ function seatRects(node: LayoutNode, box: Rect = { x0: 0, y0: 0, x1: 1, y1: 1 })
             y0: box.y0 + (box.y1 - box.y0) * offset,
             y1: box.y0 + (box.y1 - box.y0) * (offset + share),
           }
-    out.push(...seatRects(child, childBox))
+    out.push(...seatRectsOracle(child, childBox))
     offset += share
   })
   return out
@@ -56,7 +65,7 @@ describe('layout presets', () => {
   // This is the rule the whole design rests on: a seat faces the edge its
   // player sits at, so an interior rectangle would have no edge to face.
   it.each(LAYOUTS)('$id: every seat touches the edge it faces', (preset) => {
-    for (const { facing, rect } of seatRects(preset.root)) {
+    for (const { facing, rect } of seatRectsOracle(preset.root)) {
       const touches = {
         left: rect.x0 <= EPS,
         right: rect.x1 >= 1 - EPS,
@@ -68,7 +77,7 @@ describe('layout presets', () => {
   })
 
   it.each(LAYOUTS)('$id: seats tile the screen without overlapping', (preset) => {
-    const rects = seatRects(preset.root).map((s) => s.rect)
+    const rects = seatRectsOracle(preset.root).map((s) => s.rect)
 
     const area = rects.reduce((sum, r) => sum + (r.x1 - r.x0) * (r.y1 - r.y0), 0)
     expect(area).toBeCloseTo(1, 6)
@@ -93,5 +102,60 @@ describe('layout presets', () => {
   it('has unique preset ids', () => {
     const ids = LAYOUTS.map((l) => l.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+})
+
+describe('screen-edge guards', () => {
+  it('reports which screen edges a seat is flush against', () => {
+    expect(screenEdges({ x0: 0, y0: 0, x1: 1, y1: 1 }).sort())
+      .toEqual(['bottom', 'left', 'right', 'top'])
+    expect(screenEdges({ x0: 0, y0: 0, x1: 0.5, y1: 1 }).sort())
+      .toEqual(['bottom', 'left', 'top'])
+    expect(screenEdges({ x0: 0.25, y0: 0.25, x1: 0.75, y1: 0.75 })).toEqual([])
+  })
+
+  // A quarter turn clockwise sends local "left" to the top of the screen.
+  it.each([
+    [0, 'top'],
+    [90, 'left'],
+    [180, 'bottom'],
+    [270, 'right'],
+  ] as const)('at %i degrees the screen top is the local %s', (rotation, expected) => {
+    expect(localSideFacing('top', rotation)).toBe(expected)
+  })
+
+  it('is a bijection at every rotation, so no side is guarded twice', () => {
+    for (const rotation of [0, 90, 180, 270]) {
+      const mapped = (['top', 'right', 'bottom', 'left'] as const).map((e) => localSideFacing(e, rotation))
+      expect(new Set(mapped).size).toBe(4)
+    }
+  })
+
+  it('guards the local side that carries the header when it sits at the screen top', () => {
+    // A full-screen solo seat faces the bottom, so its header is at the screen top.
+    const solo = layoutById('1p')!
+    const [rect] = seatRects(solo.root)
+    expect(edgeGuardSides(rect, 'bottom')).toContain('top')
+  })
+
+  it.each(LAYOUTS)('$id: seat rects agree with the facing invariant', (preset) => {
+    const rects = seatRects(preset.root)
+    const facings = facingOrder(preset.root)
+    expect(rects).toHaveLength(facings.length)
+    rects.forEach((rect, i) => {
+      expect(screenEdges(rect), `seat ${i + 1} faces ${facings[i]}`).toContain(facings[i])
+    })
+  })
+
+  it('guards every seat that touches an edge, and only those', () => {
+    for (const preset of LAYOUTS) {
+      const rects = seatRects(preset.root)
+      const facings = facingOrder(preset.root)
+      rects.forEach((rect, i) => {
+        const guards = edgeGuardSides(rect, facings[i])
+        expect(guards.length).toBe(screenEdges(rect).length)
+        expect(guards.length).toBeGreaterThan(0) // the layout invariant guarantees this
+      })
+    }
   })
 })

@@ -177,3 +177,85 @@ export function facingOrder(node: LayoutNode, out: Facing[] = []): Facing[] {
 export function seatCount(node: LayoutNode): number {
   return node.kind === 'seat' ? 1 : node.children.reduce((n, c) => n + seatCount(c), 0)
 }
+
+
+/** Normalised 0-1 rectangle on screen. */
+export interface Rect {
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+}
+
+export type ScreenEdge = 'top' | 'right' | 'bottom' | 'left'
+
+const EPSILON = 1e-6
+
+/**
+ * Where each seat lands on screen, walking the tree the way flexbox does.
+ * Seats come back in the same depth-first order as facingOrder.
+ */
+export function seatRects(node: LayoutNode, box: Rect = { x0: 0, y0: 0, x1: 1, y1: 1 }): Rect[] {
+  if (node.kind === 'seat') return [box]
+
+  const weights = node.children.map((_, i) => node.weights?.[i] ?? 1)
+  const total = weights.reduce((a, b) => a + b, 0)
+  const out: Rect[] = []
+
+  let offset = 0
+  node.children.forEach((child, i) => {
+    const share = weights[i] / total
+    const next =
+      node.dir === 'row'
+        ? {
+            x0: box.x0 + (box.x1 - box.x0) * offset,
+            x1: box.x0 + (box.x1 - box.x0) * (offset + share),
+            y0: box.y0,
+            y1: box.y1,
+          }
+        : {
+            x0: box.x0,
+            x1: box.x1,
+            y0: box.y0 + (box.y1 - box.y0) * offset,
+            y1: box.y0 + (box.y1 - box.y0) * (offset + share),
+          }
+    out.push(...seatRects(child, next))
+    offset += share
+  })
+  return out
+}
+
+/** Which outer edges of the screen a seat is flush against. */
+export function screenEdges(rect: Rect): ScreenEdge[] {
+  const edges: ScreenEdge[] = []
+  if (rect.y0 <= EPSILON) edges.push('top')
+  if (rect.x1 >= 1 - EPSILON) edges.push('right')
+  if (rect.y1 >= 1 - EPSILON) edges.push('bottom')
+  if (rect.x0 <= EPSILON) edges.push('left')
+  return edges
+}
+
+const SIDES: ScreenEdge[] = ['top', 'right', 'bottom', 'left']
+
+/**
+ * Which side of a seat's own rotated frame is pointing at a given screen edge.
+ *
+ * A seat's controls live along its local edges, but system gestures live along
+ * the screen's. Rotating by 90 degrees clockwise sends local "left" to the top
+ * of the screen, so a guard meant for the screen top has to be applied to the
+ * local left.
+ */
+export function localSideFacing(screenEdge: ScreenEdge, rotation: number): ScreenEdge {
+  const steps = (((rotation / 90) % 4) + 4) % 4
+  const index = SIDES.indexOf(screenEdge)
+  return SIDES[(index - steps + 4) % 4]
+}
+
+/**
+ * Local sides of a seat that sit against a screen edge, and so should hold their
+ * controls clear of it. iPadOS reserves the screen edges for Control Centre and
+ * Notification Centre; a tap that starts there can be swallowed by the system.
+ */
+export function edgeGuardSides(rect: Rect, facing: Facing): ScreenEdge[] {
+  return screenEdges(rect).map((edge) => localSideFacing(edge, ROTATION[facing]))
+}

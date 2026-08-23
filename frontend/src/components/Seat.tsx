@@ -5,6 +5,7 @@ import type { Counter, SeatState } from '../state/store'
 import { readableInk } from '../game/color'
 import { Icon } from './Icon'
 import { ROTATION } from '../game/layout'
+import type { ScreenEdge } from '../game/layout'
 import { SeatNameMenu } from './SeatNameMenu'
 import { SeatSheet } from './SeatSheet'
 import { useHold } from './useHold'
@@ -19,7 +20,7 @@ import { useHold } from './useHold'
  * units (100cqh/100cqw) give the rotated frame its swapped dimensions without
  * measuring anything in JS.
  */
-export function Seat({ seat }: { seat: SeatState }) {
+export function Seat({ seat, guards = [] }: { seat: SeatState; guards?: ScreenEdge[] }) {
   const adjustLife = useStore((s) => s.adjustLife)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [nameMenuOpen, setNameMenuOpen] = useState(false)
@@ -60,7 +61,15 @@ export function Seat({ seat }: { seat: SeatState }) {
           <span>+</span>
         </button>
 
-        <div className="seat-face">
+        <div
+          className="seat-face"
+          style={{
+            ['--guard-top' as string]: guards.includes('top') ? 1 : 0,
+            ['--guard-right' as string]: guards.includes('right') ? 1 : 0,
+            ['--guard-bottom' as string]: guards.includes('bottom') ? 1 : 0,
+            ['--guard-left' as string]: guards.includes('left') ? 1 : 0,
+          }}
+        >
           <header className="seat-head">
             <button
               className="seat-name"

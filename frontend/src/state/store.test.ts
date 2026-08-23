@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { assignSymbol, clearProfileFromSeats, symbolsTakenByOthers } from './store'
+import { assignSymbol, clearProfileFromSeats, detachSeat, symbolsTakenByOthers } from './store'
 import type { SeatState } from './store'
 
 function seat(over: Partial<SeatState> = {}): SeatState {
@@ -150,5 +150,67 @@ describe('symbolsTakenByOthers', () => {
 
   it('is empty for a single seat', () => {
     expect(symbolsTakenByOthers([seat({ id: 'a' })], 'a').size).toBe(0)
+  })
+})
+
+describe('detachSeat', () => {
+  const loaded = () =>
+    seat({
+      id: 'a',
+      profileId: 'p1',
+      name: 'Marcus',
+      color: '#123456',
+      background: 'image',
+      card: {
+        scryfallId: 'abc',
+        name: 'Lightning Bolt',
+        imageUri: 'https://cards.scryfall.io/art_crop/a.jpg',
+        focusX: 0.5,
+        focusY: 0.5,
+      },
+      life: 17,
+      counters: [{ id: 'c1', kind: 'generic', icon: 'poison', label: 'Poison', value: 3 }],
+    })
+
+  // Picking "none" has to undo everything loading a profile did.
+  it('clears the name, colour and artwork, not just the id', () => {
+    const [got] = detachSeat([loaded()], 'a')
+    expect(got.profileId).toBeNull()
+    expect(got.name).toBe('Player 1')
+    expect(got.color).not.toBe('#123456')
+    expect(got.background).toBe('color')
+    expect(got.card).toBeNull()
+  })
+
+  it('keeps the game state on that seat', () => {
+    const [got] = detachSeat([loaded()], 'a')
+    expect(got.life).toBe(17)
+    expect(got.counters).toHaveLength(1)
+    expect(got.symbol).toBe('crown')
+  })
+
+  it('leaves other seats alone', () => {
+    const seats = [loaded(), seat({ id: 'b', name: 'Dana', profileId: 'p2' })]
+    const got = detachSeat(seats, 'a')
+    expect(got[1]).toEqual(seats[1])
+  })
+
+  it('gives each seat back its own default colour', () => {
+    const seats = [loaded(), seat({ id: 'b', profileId: 'p1', color: '#123456' })]
+    const got = detachSeat(detachSeat(seats, 'a'), 'b')
+    expect(got[0].color).not.toBe(got[1].color)
+    expect(got[0].name).toBe('Player 1')
+    expect(got[1].name).toBe('Player 2')
+  })
+
+  // Both paths back to an empty seat must land in the same place.
+  it('matches what deleting the profile does', () => {
+    const seats = [loaded()]
+    expect(detachSeat(seats, 'a')).toEqual(clearProfileFromSeats(seats, 'p1'))
+  })
+
+  it('is a no-op for an unknown seat', () => {
+    const seats = [loaded()]
+    expect(detachSeat(seats, 'nope')).toEqual(seats)
   })
 })

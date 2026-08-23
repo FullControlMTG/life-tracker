@@ -15,6 +15,8 @@ import { ApiError } from '../api/types'
 import type { CardBackground, Profile, Settings, User } from '../api/types'
 import { facingOrder, layoutById, layoutsFor } from '../game/layout'
 import type { Facing } from '../game/layout'
+import { DEFAULT_DISPLAY, normalizeDisplay } from '../game/display'
+import type { DisplaySettings } from '../game/display'
 import { PLAYER_SYMBOLS } from '../game/icons'
 import type { IconName } from '../game/icons'
 
@@ -67,11 +69,14 @@ export interface AppState {
   phase: Phase
   config: GameConfig
   seats: SeatState[]
+  /** Device-level display preferences; they work without an account. */
+  display: DisplaySettings
   auth: AuthState
   remote: RemoteState | null
 
   // navigation
   goto: (phase: Phase) => void
+  setDisplay: (patch: Partial<DisplaySettings>) => void
   setPlayerCount: (n: number) => void
   setStartingLife: (n: number) => void
   startGame: (layoutId: string) => void
@@ -136,26 +141,39 @@ function buildSeats(config: GameConfig, previous: SeatState[] = []): SeatState[]
 }
 
 /**
- * Resets any seat occupied by `profileId` back to an unclaimed seat.
+ * Returns a seat to an unclaimed one: default name and colour, no artwork, no
+ * profile.
  *
- * Deleting a saved player has to take them off the table too. Clearing only the
- * id would leave their name, colour and artwork still playing under a profile
- * that no longer exists. Life totals and counters are deliberately kept - the
- * game is still in progress, only the identity is gone.
+ * Life totals, counters and the seat's symbol are deliberately kept - the game
+ * is still in progress, only the identity is being cleared.
+ */
+function unclaimedSeat(seat: SeatState, index: number): SeatState {
+  return {
+    ...seat,
+    profileId: null,
+    name: `Player ${index + 1}`,
+    color: DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+    background: 'color',
+    card: null,
+  }
+}
+
+/**
+ * Resets any seat occupied by `profileId`. Deleting a saved player has to take
+ * them off the table too: clearing only the id would leave their name, colour
+ * and artwork still playing under a profile that no longer exists.
  */
 export function clearProfileFromSeats(seats: SeatState[], profileId: string): SeatState[] {
-  return seats.map((seat, i) =>
-    seat.profileId === profileId
-      ? {
-          ...seat,
-          profileId: null,
-          name: `Player ${i + 1}`,
-          color: DEFAULT_COLORS[i % DEFAULT_COLORS.length],
-          background: 'color' as const,
-          card: null,
-        }
-      : seat,
-  )
+  return seats.map((seat, i) => (seat.profileId === profileId ? unclaimedSeat(seat, i) : seat))
+}
+
+/**
+ * Detaches one seat from whoever is in it. Picking "none" has to undo
+ * everything loading a profile did, not just the id - otherwise the seat keeps
+ * wearing the last player's name and colour.
+ */
+export function detachSeat(seats: SeatState[], seatId: string): SeatState[] {
+  return seats.map((seat, i) => (seat.id === seatId ? unclaimedSeat(seat, i) : seat))
 }
 
 /**
@@ -193,10 +211,14 @@ export const useStore = create<AppState>()(
         phase: 'players',
         config: { playerCount: 4, startingLife: 40, layoutId: '' },
         seats: [],
+        display: DEFAULT_DISPLAY,
         auth: { status: 'unknown', user: null },
         remote: null,
 
         goto: (phase) => set({ phase }),
+
+        setDisplay: (patch) =>
+          set((state) => ({ display: normalizeDisplay({ ...state.display, ...patch }) })),
 
         setPlayerCount: (n) =>
           set((state) => ({
@@ -258,7 +280,7 @@ export const useStore = create<AppState>()(
 
         applyProfile: (seatId, profileId) => {
           if (profileId === null) {
-            patchSeat(seatId, (s) => ({ ...s, profileId: null }))
+            set((state) => ({ seats: detachSeat(state.seats, seatId) }))
             return
           }
           const profile = get().remote?.profiles.find((p) => p.id === profileId)
@@ -418,7 +440,17 @@ export const useStore = create<AppState>()(
       version: 1,
       // Only game state survives a refresh. Auth and remote data are always
       // re-fetched, so a stale profile list can never be shown to the wrong user.
-      partialize: (state) => ({ phase: state.phase, config: state.config, seats: state.seats }),
+      partialize: (state) => ({
+        phase: state.phase,
+        config: state.config,
+        seats: state.seats,
+        display: state.display,
+      }),
+      // Persisted state can predate the current options, so sanitise on load.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<AppState>
+        return { ...current, ...saved, display: normalizeDisplay(saved.display) }
+      },
     },
   ),
 )

@@ -16,6 +16,12 @@
   --accent: #7dd3fc;
   --danger: #fca5a5;
   --radius: 14px;
+  /* Keeps controls clear of the screen edges, where iPadOS and Android reserve
+     swipes for Control Centre / notifications and can swallow a tap that starts
+     there. Apple's edge-protect band is about 20pt, so aim to clear it with
+     room to spare once the seat's own padding is taken into account. */
+  --edge-guard: 22px;
+  --font-scale: 1;
   --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --numerals: ui-rounded, 'SF Pro Rounded', ui-sans-serif, system-ui, sans-serif;
 }
@@ -58,6 +64,7 @@ body {
   position: relative;
   height: 100%;
   overflow: hidden;
+  font-family: var(--font);
 }
 
 /* Dynamic viewport unit where supported, so a collapsing mobile toolbar does
@@ -477,18 +484,43 @@ select {
 .tap-zone.minus { left: 0; }
 .tap-zone.plus { right: 0; }
 
+/* Top half adds, bottom half removes - up means more. */
+[data-tap-split='horizontal'] .tap-zone {
+  top: auto;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: 50%;
+}
+
+[data-tap-split='horizontal'] .tap-zone.plus {
+  top: 0;
+}
+
+[data-tap-split='horizontal'] .tap-zone.minus {
+  bottom: 0;
+}
+
 .seat:hover .tap-zone,
 .tap-zone:active {
   opacity: 0.35;
 }
 
 .seat-face {
+  --seat-pad: clamp(0.4rem, 2cqmin, 1rem);
   position: absolute;
   inset: 0;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  padding: clamp(0.4rem, 2cqmin, 1rem);
+  padding: var(--seat-pad);
+  /* Sides that sit against a screen edge get pushed in; interior sides do not,
+     so no space is wasted between seats. */
+  padding-top: calc(var(--seat-pad) + var(--guard-top, 0) * var(--edge-guard));
+  padding-right: calc(var(--seat-pad) + var(--guard-right, 0) * var(--edge-guard));
+  padding-bottom: calc(var(--seat-pad) + var(--guard-bottom, 0) * var(--edge-guard));
+  padding-left: calc(var(--seat-pad) + var(--guard-left, 0) * var(--edge-guard));
   /* Taps fall through to the life zones; only real controls opt back in. */
   pointer-events: none;
 }
@@ -514,7 +546,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: clamp(0.7rem, 3cqmin, 1rem);
+  font-size: calc(clamp(0.7rem, 3cqmin, 1rem) * var(--font-scale, 1));
   font-weight: 600;
   min-width: 0;
 }
@@ -541,12 +573,12 @@ select {
 
 /* Counters take real height; the numeral gives some back so both fit. */
 .seat-face:has(.seat-counters) .life-value {
-  font-size: clamp(1.8rem, 26cqmin, 9rem);
+  font-size: calc(clamp(1.8rem, 26cqmin, 9rem) * var(--font-scale, 1));
 }
 
 .life-value {
   font-family: var(--numerals);
-  font-size: clamp(2.4rem, 34cqmin, 12rem);
+  font-size: calc(clamp(2.4rem, 34cqmin, 12rem) * var(--font-scale, 1));
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -1036,6 +1068,74 @@ select {
 .mini-slider input {
   width: 100%;
   accent-color: var(--accent);
+}
+
+/* Appears only after fullscreen was lost to something the page cannot control. */
+.restore-fullscreen {
+  position: absolute;
+  top: 0;
+  right: 3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 2.35rem;
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(10, 14, 24, 0.62);
+  backdrop-filter: blur(10px);
+  color: var(--ink);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.restore-fullscreen:hover,
+.restore-fullscreen:focus-visible {
+  opacity: 1;
+}
+
+/* --- settings ------------------------------------------------------------ */
+
+.settings-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.settings-row.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.big-btn.split-choice {
+  gap: 0.45rem;
+  padding: 0.7rem 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.split-preview {
+  width: 3.75rem;
+  height: 2.25rem;
+}
+
+.split-preview-box {
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: var(--line);
+}
+
+.split-preview-cut {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+.split-preview-mark {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
 }
 
 /* --- fading close button ------------------------------------------------- */
