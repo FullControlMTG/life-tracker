@@ -69,9 +69,13 @@ a Discord notification on every build and diagnostics capture on failure.
 
 Preflight fails fast if a credential is unbound, Docker or Compose v2 is missing,
 the external `traefik` network does not exist, or the compose file does not
-validate. Lint and type-check run inside throwaway `golang` and `node` containers
-so the agent needs no toolchains. Teardown never passes `-v`, so the database
-volume survives a redeploy. Smoke Test asserts `/healthz` and the SPA shell from
+validate. Lint, type-check and unit tests run as dedicated Docker build stages
+(`--target api-check` / `--target web-check`) rather than `docker run -v`, because
+the Jenkins agent is itself a container talking to the host daemon — a bind mount
+of the workspace path resolves on the host and silently mounts an empty directory.
+Build contexts are streamed to the daemon, so they work from anywhere.
+
+Teardown never passes `-v`, so the database volume survives a redeploy. Smoke Test asserts `/healthz` and the SPA shell from
 inside the container, then hits `https://$APP_DOMAIN/healthz` to prove Traefik is
 actually routing.
 

@@ -20,10 +20,6 @@ pipeline {
     // Build-time config baked into the frontend bundle.
     VITE_API_BASE = '/api/v1'
 
-    // Toolchain images used for isolated checks; keep in step with the Dockerfile.
-    GO_IMAGE   = 'golang:1.26-alpine'
-    NODE_IMAGE = 'node:26-alpine'
-
     POSTGRES_PASSWORD = credentials('life-tracker-postgres-password')
     DISCORD_WEBHOOK   = credentials('discord-pws-builds-channel-webhook')
   }
@@ -76,8 +72,7 @@ pipeline {
           steps {
             sh '''
               set -eu
-              docker run --rm -v "$WORKSPACE/backend":/src -w /src "$GO_IMAGE" \
-                sh -eu -c 'go vet ./... && go test ./...' \
+              docker build --target api-check -t "${SERVICE_NAME}-api-check:${BUILD_NUMBER}" . \
                 || { echo "BACKEND CHECKS FAILED: go vet or go test reported errors." >&2; exit 1; }
             '''
           }
@@ -86,11 +81,19 @@ pipeline {
           steps {
             sh '''
               set -eu
-              docker run --rm -v "$WORKSPACE/frontend":/src -w /src "$NODE_IMAGE" \
-                sh -eu -c 'npm ci && npm run lint && npx tsc --noEmit && npm test' \
+              docker build --target web-check -t "${SERVICE_NAME}-web-check:${BUILD_NUMBER}" . \
                 || { echo "FRONTEND CHECKS FAILED: lint, type-check or unit tests reported errors." >&2; exit 1; }
             '''
           }
+        }
+      }
+      post {
+        always {
+          sh '''
+            set +e
+            docker rmi "${SERVICE_NAME}-api-check:${BUILD_NUMBER}" "${SERVICE_NAME}-web-check:${BUILD_NUMBER}" >/dev/null 2>&1
+            exit 0
+          '''
         }
       }
     }

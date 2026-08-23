@@ -57,7 +57,12 @@ make deploy      # build and start the Traefik stack
 make deploy-down # stop the stack, keeping the database volume
 ```
 
-Frontend-only: `npm run lint` (oxlint), `npx tsc --noEmit` (type-check).
+Frontend-only: `npm run lint` (oxlint), `npm run typecheck`, `npm test`.
+
+Use `npm run typecheck`, never bare `tsc --noEmit`. The root `tsconfig.json`
+is a solution file with `"files": []` and project references, so `tsc --noEmit`
+checks nothing and exits 0. The script uses `tsc -b --noEmit`, which follows the
+references.
 
 ## Conventions an agent must follow
 
