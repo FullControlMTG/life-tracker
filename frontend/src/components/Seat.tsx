@@ -5,6 +5,7 @@ import type { Counter, SeatState } from '../state/store'
 import { readableInk } from '../game/color'
 import { Icon } from './Icon'
 import { ROTATION } from '../game/layout'
+import { SeatNameMenu } from './SeatNameMenu'
 import { SeatSheet } from './SeatSheet'
 import { useHold } from './useHold'
 
@@ -21,6 +22,7 @@ import { useHold } from './useHold'
 export function Seat({ seat }: { seat: SeatState }) {
   const adjustLife = useStore((s) => s.adjustLife)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [nameMenuOpen, setNameMenuOpen] = useState(false)
 
   const minus = useHold(() => adjustLife(seat.id, -1))
   const plus = useHold(() => adjustLife(seat.id, +1))
@@ -60,10 +62,15 @@ export function Seat({ seat }: { seat: SeatState }) {
 
         <div className="seat-face">
           <header className="seat-head">
-            <span className="seat-name">
+            <button
+              className="seat-name"
+              aria-haspopup="listbox"
+              aria-label={`${seat.name}: choose player`}
+              onClick={() => setNameMenuOpen(true)}
+            >
               <Icon name={seat.symbol} size={16} />
-              {seat.name}
-            </span>
+              <span className="seat-name-text">{seat.name}</span>
+            </button>
             <button
               className="btn icon ghost"
               aria-label={`${seat.name} settings`}
@@ -92,6 +99,16 @@ export function Seat({ seat }: { seat: SeatState }) {
           )}
         </div>
 
+        {nameMenuOpen && (
+          <SeatNameMenu
+            seat={seat}
+            onClose={() => setNameMenuOpen(false)}
+            onOpenSettings={() => {
+              setNameMenuOpen(false)
+              setSheetOpen(true)
+            }}
+          />
+        )}
         {sheetOpen && <SeatSheet seat={seat} onClose={() => setSheetOpen(false)} />}
       </div>
     </section>

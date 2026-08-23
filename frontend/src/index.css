@@ -498,15 +498,30 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  min-height: 2rem;
+  /* Tall enough that the expanded hit areas below are not clipped by the seat's
+     own overflow: hidden, but it gives way on a short seat - a landscape phone
+     band has barely 100px to spend. */
+  min-height: clamp(2rem, 16cqmin, 2.5rem);
 }
 
 .seat-name {
+  /* A button now: opens the same player list the seat menu offers. */
+  pointer-events: auto;
+  padding: 0.15rem 0.3rem;
+  margin: -0.15rem -0.3rem;
+  border-radius: 7px;
+  color: inherit;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   font-size: clamp(0.7rem, 3cqmin, 1rem);
   font-weight: 600;
+  min-width: 0;
+}
+
+/* The ellipsis lives on the text, not the button: overflow: hidden on the
+   button would clip its own expanded hit area. */
+.seat-name-text {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -518,9 +533,15 @@ select {
 
 .seat-life {
   flex: 1;
+  min-height: 0;
   display: grid;
   place-items: center;
   position: relative;
+}
+
+/* Counters take real height; the numeral gives some back so both fit. */
+.seat-face:has(.seat-counters) .life-value {
+  font-size: clamp(1.8rem, 26cqmin, 9rem);
 }
 
 .life-value {
@@ -544,7 +565,7 @@ select {
 .seat-counters {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: clamp(0.3rem, 1.4cqmin, 0.7rem);
   justify-content: center;
   pointer-events: auto;
 }
@@ -558,11 +579,18 @@ select {
   overflow: hidden;
 }
 
+/* Sized off the seat like the life total, so counters grow on a tablet instead
+   of staying phone-sized, and never fall below a finger-friendly target. */
 .counter-step {
-  padding: 0.1rem 0.45rem;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  opacity: 0.7;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: clamp(2.25rem, 20cqmin, 4rem);
+  min-height: clamp(2.25rem, 20cqmin, 4rem);
+  padding: 0;
+  font-size: clamp(1.05rem, 8cqmin, 2rem);
+  line-height: 1;
+  opacity: 0.75;
 }
 
 .counter-step:hover {
@@ -573,10 +601,98 @@ select {
 .counter-body {
   display: inline-flex;
   align-items: center;
-  gap: 0.22rem;
-  padding: 0.1rem 0.15rem;
+  justify-content: center;
+  gap: 0.3em;
+  padding: 0 0.4em;
+  min-width: clamp(2.2rem, 16cqmin, 3.5rem);
   font-family: var(--numerals);
-  font-size: 0.82rem;
+  font-size: clamp(1rem, 7.5cqmin, 1.9rem);
+}
+
+.counter-body svg {
+  width: 1em;
+  height: 1em;
+}
+
+.seat-name:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* Controls over the board are small by design, so their hit area is expanded
+   past their painted size - 48px, clearing both the Apple (44) and Android (48)
+   minimums. The pseudo-element does not affect layout and is centred, so
+   neighbours stay reachable. Only the always-on-screen controls need this; the
+   expanded menus are already comfortably sized. */
+.seat-name,
+.seat-head .btn.icon,
+.account-trigger {
+  position: relative;
+}
+
+.seat-name::after,
+.seat-head .btn.icon::after,
+.account-trigger::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 48px);
+  height: max(100%, 48px);
+  transform: translate(-50%, -50%);
+}
+
+/* The name button is already wide; it only needs vertical reach, and must not
+   grow sideways into the seat's ... button. */
+.seat-name::after {
+  width: 100%;
+}
+
+/* --- seat name menu ------------------------------------------------------ */
+
+.seat-menu {
+  display: flex;
+  flex-direction: column;
+  width: min(300px, 82vmin);
+  max-height: min(420px, 82vmin);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(11, 18, 32, 0.97);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  overflow: hidden;
+}
+
+.seat-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.seat-menu-list {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.seat-menu-list .muted {
+  padding: 0.3rem 0.55rem;
+}
+
+.seat-menu-list .select-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.seat-menu-foot {
+  padding: 0.5rem 0.6rem;
+  border-top: 1px solid var(--line);
 }
 
 /* --- seat sheet ---------------------------------------------------------- */
@@ -666,6 +782,40 @@ select {
 .chip:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* --- symbol picker ------------------------------------------------------- */
+
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.3rem;
+}
+
+.symbol {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 9px;
+  border: 1.5px solid var(--line);
+  background: var(--raise);
+  color: var(--ink);
+}
+
+.symbol:hover:not(:disabled) {
+  background: var(--raise-hi);
+}
+
+.symbol.is-active {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.18);
+}
+
+/* Worn by another seat: shown in their colour so it reads as taken, not broken. */
+.symbol.is-taken {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
 }
 
 /* --- select -------------------------------------------------------------- */

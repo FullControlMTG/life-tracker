@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import { useStore } from '../state/store'
+import { symbolsTakenByOthers, useStore } from '../state/store'
 import type { SeatState } from '../state/store'
-import { GENERIC_COUNTERS } from '../game/icons'
+import { GENERIC_COUNTERS, PLAYER_SYMBOLS } from '../game/icons'
 import { Icon } from './Icon'
 import { ROTATION } from '../game/layout'
+import type { IconName } from '../game/icons'
 import { ColorPicker } from './ColorPicker'
 import { CardSearch } from './CardSearch'
 import { Select } from './Select'
@@ -84,7 +85,8 @@ export function SeatSheet({ seat, onClose }: { seat: SeatState; onClose: () => v
 }
 
 function PlayerTab({ seat }: { seat: SeatState }) {
-  const { auth, remote, applyProfile, setSeatName, createProfileFromSeat, adjustLife } = useStore()
+  const { auth, remote, seats, applyProfile, setSeatName, setSeatSymbol, createProfileFromSeat, adjustLife } =
+    useStore()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -130,6 +132,11 @@ function PlayerTab({ seat }: { seat: SeatState }) {
         />
       </label>
 
+      <div className="field-row">
+        <span>Symbol</span>
+        <SymbolPicker seat={seat} seats={seats} onPick={(icon) => setSeatSymbol(seat.id, icon)} />
+      </div>
+
       {authed && !seat.profileId && (
         <div className="field-row">
           <button className="btn wide" disabled={busy || !trimmedName} onClick={saveProfile}>
@@ -149,6 +156,48 @@ function PlayerTab({ seat }: { seat: SeatState }) {
         </div>
       </div>
     </>
+  )
+}
+
+/**
+ * Symbols must stay unique across the table - commander-damage counters are
+ * identified by the attacker's symbol, so a duplicate would be ambiguous.
+ * Symbols another seat wears are shown in that seat's colour and cannot be
+ * picked; the store refuses them too, so the rule holds by any route.
+ */
+function SymbolPicker({
+  seat,
+  seats,
+  onPick,
+}: {
+  seat: SeatState
+  seats: SeatState[]
+  onPick: (icon: IconName) => void
+}) {
+  const taken = symbolsTakenByOthers(seats, seat.id)
+  const ownerOf = (icon: IconName) => seats.find((s) => s.id !== seat.id && s.symbol === icon)
+
+  return (
+    <div className="symbol-grid">
+      {PLAYER_SYMBOLS.map((icon) => {
+        const owner = taken.has(icon) ? ownerOf(icon) : undefined
+        const active = seat.symbol === icon
+        return (
+          <button
+            key={icon}
+            className={`symbol${active ? ' is-active' : ''}${owner ? ' is-taken' : ''}`}
+            style={owner ? { color: owner.color } : undefined}
+            disabled={!!owner}
+            aria-pressed={active}
+            aria-label={owner ? `${icon}, used by ${owner.name}` : icon}
+            title={owner ? `Used by ${owner.name}` : icon}
+            onClick={() => onPick(icon)}
+          >
+            <Icon name={icon} size={18} />
+          </button>
+        )
+      })}
+    </div>
   )
 }
 

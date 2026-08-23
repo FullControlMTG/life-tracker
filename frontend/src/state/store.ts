@@ -83,6 +83,7 @@ export interface AppState {
   setSeatColor: (seatId: string, hex: string) => void
   setSeatCard: (seatId: string, card: CardBackground | null) => void
   setSeatName: (seatId: string, name: string) => void
+  setSeatSymbol: (seatId: string, symbol: IconName) => void
   applyProfile: (seatId: string, profileId: string | null) => void
   addCounter: (seatId: string, counter: Omit<Counter, 'id' | 'value'> & { value?: number }) => void
   adjustCounter: (seatId: string, counterId: string, delta: number) => void
@@ -157,6 +158,28 @@ export function clearProfileFromSeats(seats: SeatState[], profileId: string): Se
   )
 }
 
+/**
+ * Gives a seat a symbol, refusing it if another seat already wears it.
+ *
+ * Symbols identify who dealt commander damage, so two players sharing one would
+ * make those counters ambiguous. The rule lives here rather than only in the
+ * picker, so no code path can break it.
+ */
+export function assignSymbol(
+  seats: SeatState[],
+  seatId: string,
+  symbol: IconName,
+): SeatState[] {
+  const taken = seats.some((s) => s.id !== seatId && s.symbol === symbol)
+  if (taken) return seats
+  return seats.map((s) => (s.id === seatId ? { ...s, symbol } : s))
+}
+
+/** Symbols in use by seats other than `seatId`. */
+export function symbolsTakenByOthers(seats: SeatState[], seatId: string): Set<IconName> {
+  return new Set(seats.filter((s) => s.id !== seatId).map((s) => s.symbol))
+}
+
 /** Timers that clear the transient life-change badge, kept out of state. */
 const deltaTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -223,6 +246,9 @@ export const useStore = create<AppState>()(
           })),
 
         setSeatName: (seatId, name) => patchSeat(seatId, (s) => ({ ...s, name })),
+
+        setSeatSymbol: (seatId, symbol) =>
+          set((state) => ({ seats: assignSymbol(state.seats, seatId, symbol) })),
 
         applyProfile: (seatId, profileId) => {
           if (profileId === null) {

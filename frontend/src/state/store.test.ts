@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { clearProfileFromSeats } from './store'
+import { assignSymbol, clearProfileFromSeats, symbolsTakenByOthers } from './store'
 import type { SeatState } from './store'
 
 function seat(over: Partial<SeatState> = {}): SeatState {
@@ -91,5 +91,64 @@ describe('clearProfileFromSeats', () => {
   it('is a no-op when nobody is using that profile', () => {
     const seats = [seat({ profileId: 'p9' })]
     expect(clearProfileFromSeats(seats, 'p1')).toEqual(seats)
+  })
+})
+
+describe('assignSymbol', () => {
+  const table = () => [
+    seat({ id: 'a', symbol: 'crown' }),
+    seat({ id: 'b', symbol: 'sword' }),
+    seat({ id: 'c', symbol: 'flame' }),
+  ]
+
+  it('assigns a symbol nobody is using', () => {
+    const got = assignSymbol(table(), 'a', 'skull')
+    expect(got.find((s) => s.id === 'a')!.symbol).toBe('skull')
+  })
+
+  // Commander-damage counters are identified by symbol, so a duplicate would
+  // make it impossible to tell who dealt the damage.
+  it('refuses a symbol another seat already wears', () => {
+    const before = table()
+    const got = assignSymbol(before, 'a', 'sword')
+    expect(got.find((s) => s.id === 'a')!.symbol).toBe('crown')
+    expect(got.find((s) => s.id === 'b')!.symbol).toBe('sword')
+    expect(got).toBe(before)
+  })
+
+  it('lets a seat keep its own symbol', () => {
+    const got = assignSymbol(table(), 'a', 'crown')
+    expect(got.find((s) => s.id === 'a')!.symbol).toBe('crown')
+  })
+
+  it('never lets two seats share a symbol, whatever is requested', () => {
+    let seats = table()
+    for (const wanted of ['sword', 'flame', 'crown', 'moon', 'sword', 'moon'] as const) {
+      for (const id of ['a', 'b', 'c']) {
+        seats = assignSymbol(seats, id, wanted)
+        const symbols = seats.map((s) => s.symbol)
+        expect(new Set(symbols).size, `duplicate after ${id} asked for ${wanted}`).toBe(symbols.length)
+      }
+    }
+  })
+
+  it('leaves other seats alone', () => {
+    const before = table()
+    const got = assignSymbol(before, 'a', 'moon')
+    expect(got[1]).toEqual(before[1])
+    expect(got[2]).toEqual(before[2])
+  })
+})
+
+describe('symbolsTakenByOthers', () => {
+  it('excludes the seat asking', () => {
+    const seats = [seat({ id: 'a', symbol: 'crown' }), seat({ id: 'b', symbol: 'sword' })]
+    const taken = symbolsTakenByOthers(seats, 'a')
+    expect(taken.has('sword')).toBe(true)
+    expect(taken.has('crown')).toBe(false)
+  })
+
+  it('is empty for a single seat', () => {
+    expect(symbolsTakenByOthers([seat({ id: 'a' })], 'a').size).toBe(0)
   })
 })
