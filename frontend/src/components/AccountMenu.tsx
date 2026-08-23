@@ -28,9 +28,8 @@ export function AccountMenu() {
     }
   }, [open])
 
-  const { auth, logout, remote } = useStore()
+  const { auth, logout } = useStore()
   const fullscreen = useFullscreen()
-  const profileCount = remote?.profiles.length ?? 0
 
   return (
     <div className="account" ref={wrap}>
@@ -55,6 +54,10 @@ export function AccountMenu() {
 
       {open && (
         <div className="account-panel" role="menu">
+          {auth.status === 'authed' && (
+            <p className="account-name">{auth.user?.displayName}</p>
+          )}
+
           <div className="panel-group">
             <button
               className="btn subtle wide"
@@ -84,16 +87,6 @@ export function AccountMenu() {
 
           {auth.status === 'authed' ? (
             <div className="panel-group">
-              <p className="muted">
-                Signed in as <strong>{auth.user?.displayName}</strong>
-              </p>
-              {/* The saved players live in Settings, not here: the list has no
-                  upper bound and this panel hangs over a live game. */}
-              <p className="muted">
-                {profileCount === 0
-                  ? 'No saved players yet.'
-                  : `${profileCount} saved ${profileCount === 1 ? 'player' : 'players'} — manage them in Settings.`}
-              </p>
               <button className="btn subtle wide" onClick={() => { void logout(); setOpen(false) }}>
                 Sign out
               </button>

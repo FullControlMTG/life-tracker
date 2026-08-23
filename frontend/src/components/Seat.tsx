@@ -59,12 +59,10 @@ export function Seat({ seat, guards = [] }: { seat: SeatState; guards?: ScreenEd
       )}
 
       <div className="seat-rotor">
-        <button className="tap-zone minus" aria-label={`${seat.name} lose 1 life`} {...minus}>
-          <span>−</span>
-        </button>
-        <button className="tap-zone plus" aria-label={`${seat.name} gain 1 life`} {...plus}>
-          <span>+</span>
-        </button>
+        {/* No glyph inside: the press itself lights the half that was hit. See
+            .tap-zone in the stylesheet for why. */}
+        <button className="tap-zone minus" aria-label={`${seat.name} lose 1 life`} {...minus} />
+        <button className="tap-zone plus" aria-label={`${seat.name} gain 1 life`} {...plus} />
 
         <div
           className="seat-face"

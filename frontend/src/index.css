@@ -502,18 +502,21 @@ select {
   transform: translate(-50%, -50%) rotate(270deg);
 }
 
+/* The halves carry no standing +/- glyph. Stacked top/bottom they landed on
+   the same spot as the delta badge, and on a tablet - where nothing hovers -
+   they only ever appeared once a finger was already down, so they taught
+   nobody anything. Lighting the half that was pressed says the same thing at
+   the moment it is useful, and shows where the tap landed. */
 .tap-zone {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 50%;
   z-index: 1;
-  display: grid;
-  place-items: center;
   color: inherit;
+  background: radial-gradient(ellipse at center, currentColor, transparent 70%);
   opacity: 0;
-  font-size: clamp(1.4rem, 7cqmin, 3rem);
-  transition: opacity 140ms ease;
+  transition: opacity 300ms ease;
 }
 
 .tap-zone.minus { left: 0; }
@@ -537,9 +540,11 @@ select {
   bottom: 0;
 }
 
-.seat:hover .tap-zone,
+/* Snap on, fade out - a press should register instantly and linger briefly.
+   Held presses repeat, and :active stays set for the whole hold. */
 .tap-zone:active {
-  opacity: 0.35;
+  opacity: 0.22;
+  transition-duration: 40ms;
 }
 
 .seat-face {
@@ -627,6 +632,13 @@ select {
   font-size: clamp(0.9rem, 8cqmin, 2rem);
   font-weight: 600;
   opacity: 0.6;
+}
+
+/* Stacked taps put a thumb over the middle of the top half - exactly where the
+   badge sits when centred. Tucking it into the corner keeps it clear of both
+   the thumb and the numeral, and it fades too quickly to unbalance the face. */
+[data-tap-split='horizontal'] .life-delta {
+  right: 8%;
 }
 
 .seat-counters {
@@ -1575,6 +1587,18 @@ select {
   background: rgba(11, 18, 32, 0.96);
   backdrop-filter: blur(16px);
   text-align: left;
+}
+
+/* Who is signed in, as a heading rather than a sentence. */
+.account-name {
+  margin: 0;
+  padding: 0.5rem 0 0.6rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 1rem;
+  font-weight: 650;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .panel-group {
