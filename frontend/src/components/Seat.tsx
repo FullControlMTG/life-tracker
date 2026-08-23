@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { useStore } from '../state/store'
 import type { Counter, SeatState } from '../state/store'
-import { readableInk, seatGradient } from '../game/color'
+import { readableInk } from '../game/color'
 import { Icon } from './Icon'
 import { ROTATION } from '../game/layout'
 import { SeatSheet } from './SeatSheet'
@@ -34,7 +34,7 @@ export function Seat({ seat }: { seat: SeatState }) {
       data-rot={rotation}
       data-bg={seat.background}
       style={{
-        background: seatGradient(seat.color),
+        backgroundColor: seat.color,
         color: ink,
         ['--ink' as string]: ink,
       }}

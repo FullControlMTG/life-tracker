@@ -77,11 +77,3 @@ export function readableInk(hex: string): string {
 export function isHex(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value)
 }
-
-/** A soft two-stop gradient so a flat seat colour still reads as a surface. */
-export function seatGradient(hex: string): string {
-  const { h, s, l } = hexToHsl(hex)
-  const top = hslToHex({ h, s, l: Math.min(96, l + 8) })
-  const bottom = hslToHex({ h, s, l: Math.max(4, l - 9) })
-  return `linear-gradient(160deg, ${top}, ${bottom})`
-}

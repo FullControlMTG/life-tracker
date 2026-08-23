@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    Life tracker
-   The look is deliberately flat: a smooth colour field, no cards or panels
-   except where something is genuinely floating above the game.
+   The look is deliberately flat: seats are a single solid colour, no cards or
+   panels except where something is genuinely floating above the game.
 --------------------------------------------------------------------------- */
 
 :root {
@@ -679,6 +679,14 @@ select {
   /* Keeps a drag from scrolling the sheet underneath it on touch. */
   touch-action: none;
   cursor: pointer;
+}
+
+.slider-anchor {
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
 .slider-thumb {

@@ -2,11 +2,17 @@ import { useCallback, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 
 import { hexToHsl, hslToHex, isHex } from '../game/color'
+import { axisRatio } from '../game/geometry'
 
 /**
  * A pointer-driven slider. Rebuilt rather than using <input type="range">
  * because the track needs a live gradient fill and a touch target big enough to
  * drag with a thumb on a phone.
+ *
+ * The two zero-size anchors mark the ends of the track. Reading their screen
+ * positions gives the track's real direction, so the slider keeps working when
+ * the seat menu is rotated a quarter turn - a drag along the track is followed
+ * whichever way the track happens to point.
  */
 function Slider({
   value,
@@ -23,14 +29,22 @@ function Slider({
   label: string
   onChange: (v: number) => void
 }) {
-  const track = useRef<HTMLDivElement>(null)
+  const startAnchor = useRef<HTMLSpanElement>(null)
+  const endAnchor = useRef<HTMLSpanElement>(null)
 
   const apply = useCallback(
-    (clientX: number) => {
-      const el = track.current
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    (clientX: number, clientY: number) => {
+      const start = startAnchor.current
+      const end = endAnchor.current
+      if (!start || !end) return
+
+      const a = start.getBoundingClientRect()
+      const b = end.getBoundingClientRect()
+      const ratio = axisRatio(
+        { x: clientX, y: clientY },
+        { x: a.left, y: a.top },
+        { x: b.left, y: b.top },
+      )
       onChange(Math.round(min + ratio * (max - min)))
     },
     [min, max, onChange],
@@ -39,11 +53,11 @@ function Slider({
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     e.preventDefault()
     e.currentTarget.setPointerCapture(e.pointerId)
-    apply(e.clientX)
+    apply(e.clientX, e.clientY)
   }
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) apply(e.clientX)
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) apply(e.clientX, e.clientY)
   }
 
   const pct = ((value - min) / (max - min)) * 100
@@ -52,7 +66,6 @@ function Slider({
     <div className="slider">
       <span className="slider-label">{label}</span>
       <div
-        ref={track}
         className="slider-track"
         style={{ background: gradient }}
         role="slider"
@@ -68,6 +81,8 @@ function Slider({
           if (e.key === 'ArrowRight') onChange(Math.min(max, value + 1))
         }}
       >
+        <span ref={startAnchor} className="slider-anchor" style={{ left: 0 }} />
+        <span ref={endAnchor} className="slider-anchor" style={{ left: '100%' }} />
         <span className="slider-thumb" style={{ left: `${pct}%` }} />
       </div>
     </div>
