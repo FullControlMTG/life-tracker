@@ -21,7 +21,8 @@ export function TableMenu() {
   const [open, setOpen] = useState(false)
   const [count, setCount] = useState(1)
   const [outcome, setOutcome] = useState<Outcome>(null)
-  const { restartGame, newGame } = useStore()
+  const { seats, restartGame, newGame } = useStore()
+  const [confirmingNewGame, setConfirmingNewGame] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -33,6 +34,7 @@ export function TableMenu() {
   const close = () => {
     setOpen(false)
     setOutcome(null)
+    setConfirmingNewGame(false)
   }
 
   return (
@@ -105,9 +107,29 @@ export function TableMenu() {
               <button className="big-btn wide" onClick={() => { restartGame(); close() }}>
                 Reset life totals
               </button>
-              <button className="big-btn wide" onClick={() => { newGame(); close() }}>
-                New game
-              </button>
+
+              {/* Confirmed inline rather than with confirm(): a browser modal can
+                  drop the page out of fullscreen. */}
+              {confirmingNewGame ? (
+                <div className="confirm" role="alertdialog" aria-label="Start a new game?">
+                  <p className="confirm-text">
+                    Start over? This ends the game for {seats.length}{' '}
+                    {seats.length === 1 ? 'player' : 'players'} and clears their life totals.
+                  </p>
+                  <div className="confirm-actions">
+                    <button className="big-btn" onClick={() => setConfirmingNewGame(false)}>
+                      Keep playing
+                    </button>
+                    <button className="big-btn danger" onClick={() => { newGame(); close() }}>
+                      New game
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button className="big-btn wide" onClick={() => setConfirmingNewGame(true)}>
+                  New game
+                </button>
+              )}
             </div>
           </div>
         </div>

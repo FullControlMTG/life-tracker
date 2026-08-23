@@ -1095,6 +1095,37 @@ select {
   opacity: 1;
 }
 
+/* --- inline confirmation -------------------------------------------------- */
+
+.confirm {
+  padding: 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(252, 165, 165, 0.4);
+  background: rgba(252, 165, 165, 0.1);
+}
+
+.confirm-text {
+  margin: 0 0 0.7rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.confirm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.big-btn.danger {
+  border-color: rgba(252, 165, 165, 0.55);
+  background: rgba(252, 165, 165, 0.18);
+  color: var(--danger);
+}
+
+.big-btn.danger:hover {
+  background: rgba(252, 165, 165, 0.28);
+}
+
 /* --- settings ------------------------------------------------------------ */
 
 .settings-row {
