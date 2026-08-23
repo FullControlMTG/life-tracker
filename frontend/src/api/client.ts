@@ -84,6 +84,7 @@ export const api = {
     displayName: string
     color: string
     background?: 'color' | 'image'
+    symbol?: string
     card?: CardBackground | null
   }) => request<{ profile: Profile }>('/profiles', { method: 'POST', ...json(input) }),
 
@@ -91,6 +92,7 @@ export const api = {
     displayName?: string
     color?: string
     background?: 'color' | 'image'
+    symbol?: string
     card?: CardBackground
     clearCard?: boolean
   }) => request<{ profile: Profile }>(`/profiles/${id}`, { method: 'PATCH', ...json(patch) }),

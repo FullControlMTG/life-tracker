@@ -63,10 +63,12 @@ type CardBackground struct {
 }
 
 type Profile struct {
-	ID          uuid.UUID       `json:"id"`
-	DisplayName string          `json:"displayName"`
-	Color       string          `json:"color"`
-	Background  string          `json:"background"` // "color" | "image"
+	ID          uuid.UUID `json:"id"`
+	DisplayName string    `json:"displayName"`
+	Color       string    `json:"color"`
+	Background  string    `json:"background"` // "color" | "image"
+	// Symbol is the icon this player plays under. Empty means no preference.
+	Symbol      string          `json:"symbol"`
 	Card        *CardBackground `json:"card"`
 	SavedColors []string        `json:"savedColors"`
 	CreatedAt   time.Time       `json:"createdAt"`
@@ -78,6 +80,7 @@ type ProfilePatch struct {
 	DisplayName *string         `json:"displayName"`
 	Color       *string         `json:"color"`
 	Background  *string         `json:"background"`
+	Symbol      *string         `json:"symbol"`
 	Card        *CardBackground `json:"card"`
 	ClearCard   bool            `json:"clearCard"`
 }

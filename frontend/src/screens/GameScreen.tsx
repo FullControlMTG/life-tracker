@@ -1,5 +1,6 @@
 import { Seat } from '../components/Seat'
 import { SplitLayout } from '../components/SplitLayout'
+import { TableMenu } from '../components/TableMenu'
 import { layoutById } from '../game/layout'
 import { useStore } from '../state/store'
 
@@ -22,12 +23,15 @@ export function GameScreen() {
   }
 
   return (
-    <SplitLayout
-      root={preset.root}
-      renderSeat={(index) => {
-        const seat = seats[index]
-        return seat ? <Seat seat={seat} /> : null
-      }}
-    />
+    <>
+      <SplitLayout
+        root={preset.root}
+        renderSeat={(index) => {
+          const seat = seats[index]
+          return seat ? <Seat seat={seat} /> : null
+        }}
+      />
+      <TableMenu />
+    </>
   )
 }

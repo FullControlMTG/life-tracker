@@ -670,6 +670,13 @@ select {
   border-bottom: 1px solid var(--line);
 }
 
+.seat-menu-title {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .seat-menu-list {
   flex: 1;
   list-style: none;
@@ -1029,6 +1036,191 @@ select {
 .mini-slider input {
   width: 100%;
   accent-color: var(--accent);
+}
+
+/* --- fading close button ------------------------------------------------- */
+
+/* Sits quietly over the game until touched, then settles back on its own. The
+   delay is on the way out only, so it lights up instantly under a finger and
+   fades a beat later - no timers, just an asymmetric transition. */
+.fade-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--ink);
+  background: transparent;
+  opacity: 0.3;
+  transition: opacity 700ms ease 1.6s, background-color 160ms ease, transform 160ms ease;
+}
+
+.fade-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 48px);
+  height: max(100%, 48px);
+  transform: translate(-50%, -50%);
+}
+
+.fade-btn:hover,
+.fade-btn:focus-visible,
+.fade-btn:active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.16);
+  transition-delay: 0s;
+}
+
+.fade-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* --- table menu ---------------------------------------------------------- */
+
+/* Dead centre, where the seats meet - it belongs to the table, not a player. */
+.table-trigger {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  width: clamp(2.75rem, 7vmin, 4rem);
+  height: clamp(2.75rem, 7vmin, 4rem);
+  padding: clamp(0.5rem, 1.4vmin, 0.9rem);
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(10, 14, 24, 0.62);
+  backdrop-filter: blur(10px);
+  color: var(--ink);
+  transform: translate(-50%, -50%);
+  opacity: 0.55;
+  transition: opacity 700ms ease 1.6s, transform 160ms ease;
+}
+
+.table-trigger:hover,
+.table-trigger:focus-visible,
+.table-trigger[aria-expanded='true'] {
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.table-trigger:active {
+  transform: translate(-50%, -50%) scale(0.92);
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+.table-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(30rem, 92vmin);
+  max-height: min(44rem, 88vmin);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: rgba(11, 18, 32, 0.97);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+
+.table-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.6rem 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.table-panel-body {
+  padding: 0.6rem 0.9rem 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-label {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* Thumbed mid-game, often without looking, so everything here is oversized. */
+.big-btn {
+  display: grid;
+  place-items: center;
+  min-height: 3.25rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--raise);
+  font-size: 1.05rem;
+  font-weight: 600;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.big-btn:hover {
+  background: var(--raise-hi);
+}
+
+.big-btn:active {
+  transform: scale(0.97);
+}
+
+.big-btn.is-active {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.18);
+}
+
+.big-btn.wide {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.count-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.4rem;
+}
+
+.dice-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
+  gap: 0.4rem;
+}
+
+.big-btn.die {
+  font-family: var(--numerals);
+}
+
+.outcome {
+  display: grid;
+  place-items: center;
+  gap: 0.2rem;
+  padding: 0.9rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(125, 211, 252, 0.12);
+  border: 1px solid rgba(125, 211, 252, 0.35);
+}
+
+.outcome-total {
+  font-family: var(--numerals);
+  font-size: clamp(2.4rem, 11vmin, 4rem);
+  font-weight: 650;
+  line-height: 1;
+}
+
+.outcome-detail {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+  text-align: center;
 }
 
 /* --- account menu -------------------------------------------------------- */

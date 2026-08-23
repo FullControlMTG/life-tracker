@@ -204,7 +204,7 @@ func (p *Postgres) SaveSettings(ctx context.Context, userID uuid.UUID, in models
 
 // --- profiles ------------------------------------------------------------
 
-const profileColumns = `id, display_name, color, background_kind, card_scryfall_id, card_name,
+const profileColumns = `id, display_name, color, background_kind, symbol, card_scryfall_id, card_name,
 	card_image_uri, card_focus_x, card_focus_y, saved_colors, created_at, updated_at`
 
 func scanProfile(row pgx.Row) (*models.Profile, error) {
@@ -216,7 +216,7 @@ func scanProfile(row pgx.Row) (*models.Profile, error) {
 		focusY   float64
 		imageURI string
 	)
-	err := row.Scan(&p.ID, &p.DisplayName, &p.Color, &p.Background,
+	err := row.Scan(&p.ID, &p.DisplayName, &p.Color, &p.Background, &p.Symbol,
 		&card.ScryfallID, &card.Name, &imageURI, &focusX, &focusY,
 		&colors, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
@@ -263,11 +263,11 @@ func (p *Postgres) CreateProfile(ctx context.Context, userID uuid.UUID, in model
 		in.SavedColors = []string{}
 	}
 	return scanProfile(p.pool.QueryRow(ctx,
-		`INSERT INTO profiles (id, user_id, display_name, color, background_kind,
+		`INSERT INTO profiles (id, user_id, display_name, color, background_kind, symbol,
 			card_scryfall_id, card_name, card_image_uri, card_focus_x, card_focus_y, saved_colors)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		 RETURNING `+profileColumns,
-		uuid.New(), userID, in.DisplayName, in.Color, in.Background,
+		uuid.New(), userID, in.DisplayName, in.Color, in.Background, in.Symbol,
 		card.ScryfallID, card.Name, card.ImageURI, card.FocusX, card.FocusY, in.SavedColors))
 }
 
@@ -291,6 +291,9 @@ func (p *Postgres) UpdateProfile(ctx context.Context, userID, id uuid.UUID, patc
 	if patch.Background != nil {
 		current.Background = *patch.Background
 	}
+	if patch.Symbol != nil {
+		current.Symbol = *patch.Symbol
+	}
 	switch {
 	case patch.ClearCard:
 		current.Card = nil
@@ -303,12 +306,12 @@ func (p *Postgres) UpdateProfile(ctx context.Context, userID, id uuid.UUID, patc
 		card = &models.CardBackground{FocusX: 0.5, FocusY: 0.5}
 	}
 	return scanProfile(p.pool.QueryRow(ctx,
-		`UPDATE profiles SET display_name = $3, color = $4, background_kind = $5,
-			card_scryfall_id = $6, card_name = $7, card_image_uri = $8,
-			card_focus_x = $9, card_focus_y = $10, updated_at = now()
+		`UPDATE profiles SET display_name = $3, color = $4, background_kind = $5, symbol = $6,
+			card_scryfall_id = $7, card_name = $8, card_image_uri = $9,
+			card_focus_x = $10, card_focus_y = $11, updated_at = now()
 		 WHERE user_id = $1 AND id = $2
 		 RETURNING `+profileColumns,
-		userID, id, current.DisplayName, current.Color, current.Background,
+		userID, id, current.DisplayName, current.Color, current.Background, current.Symbol,
 		card.ScryfallID, card.Name, card.ImageURI, card.FocusX, card.FocusY))
 }
 

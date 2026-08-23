@@ -31,6 +31,8 @@ export interface Profile {
   displayName: string
   color: string
   background: 'color' | 'image'
+  /** Icon name from PLAYER_SYMBOLS; empty means no preference. */
+  symbol: string
   card: CardBackground | null
   savedColors: string[]
   createdAt: string

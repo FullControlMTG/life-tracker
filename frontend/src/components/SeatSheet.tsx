@@ -50,7 +50,7 @@ export function SeatSheet({ seat, onClose }: { seat: SeatState; onClose: () => v
       >
       <header className="sheet-head">
         <strong>{seat.name}</strong>
-        <button className="btn icon" aria-label="Close" onClick={onClose}>
+        <button className="fade-btn" aria-label="Close" onClick={onClose}>
           ✕
         </button>
       </header>

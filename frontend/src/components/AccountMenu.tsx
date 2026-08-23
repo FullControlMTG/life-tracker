@@ -26,7 +26,7 @@ export function AccountMenu() {
     }
   }, [open])
 
-  const { auth, phase, logout, newGame, restartGame } = useStore()
+  const { auth, logout } = useStore()
   const fullscreen = useFullscreen()
 
   return (
@@ -48,17 +48,6 @@ export function AccountMenu() {
             <div className="panel-group">
               <button className="btn subtle wide" onClick={fullscreen.toggle}>
                 {fullscreen.active ? 'Exit fullscreen' : 'Enter fullscreen'}
-              </button>
-            </div>
-          )}
-
-          {phase === 'game' && (
-            <div className="panel-group">
-              <button className="btn subtle wide" onClick={() => { restartGame(); setOpen(false) }}>
-                Reset life totals
-              </button>
-              <button className="btn subtle wide" onClick={() => { newGame(); setOpen(false) }}>
-                New game
               </button>
             </div>
           )}

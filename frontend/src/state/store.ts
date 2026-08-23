@@ -247,8 +247,14 @@ export const useStore = create<AppState>()(
 
         setSeatName: (seatId, name) => patchSeat(seatId, (s) => ({ ...s, name })),
 
-        setSeatSymbol: (seatId, symbol) =>
-          set((state) => ({ seats: assignSymbol(state.seats, seatId, symbol) })),
+        setSeatSymbol: (seatId, symbol) => {
+          set((state) => ({ seats: assignSymbol(state.seats, seatId, symbol) }))
+          const seat = get().seats.find((s) => s.id === seatId)
+          // Only persist if the assignment actually took.
+          if (seat?.profileId && seat.symbol === symbol) {
+            void get().updateProfile(seat.profileId, { symbol }).catch(() => {})
+          }
+        },
 
         applyProfile: (seatId, profileId) => {
           if (profileId === null) {
@@ -265,6 +271,13 @@ export const useStore = create<AppState>()(
             background: profile.background,
             card: profile.card,
           }))
+          // A saved symbol is a preference, not a claim: if another seat is
+          // already wearing it, this seat keeps the one it had.
+          if (profile.symbol) {
+            set((state) => ({
+              seats: assignSymbol(state.seats, seatId, profile.symbol as IconName),
+            }))
+          }
         },
 
         addCounter: (seatId, counter) =>
@@ -350,6 +363,7 @@ export const useStore = create<AppState>()(
             displayName,
             color: seat.color,
             background: seat.background,
+            symbol: seat.symbol,
             card: seat.card,
           })
           set((state) =>

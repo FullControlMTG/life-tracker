@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { useStore } from '../state/store'
@@ -23,7 +23,8 @@ export function SeatNameMenu({
   onClose: () => void
   onOpenSettings: () => void
 }) {
-  const { auth, remote, applyProfile } = useStore()
+  const { auth, remote, applyProfile, setSeatName } = useStore()
+  const [renaming, setRenaming] = useState(false)
   const profiles = remote?.profiles ?? []
   const authed = auth.status === 'authed'
 
@@ -49,7 +50,25 @@ export function SeatNameMenu({
       >
         <header className="seat-menu-head">
           <Icon name={seat.symbol} size={16} />
-          <strong>{seat.name}</strong>
+          {renaming ? (
+            <input
+              className="field"
+              value={seat.name}
+              maxLength={40}
+              aria-label="Seat name"
+              autoFocus
+              onChange={(e) => setSeatName(seat.id, e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setRenaming(false)}
+              onBlur={() => setRenaming(false)}
+            />
+          ) : (
+            <>
+              <strong className="seat-menu-title">{seat.name}</strong>
+              <button className="btn subtle" onClick={() => setRenaming(true)}>
+                Rename
+              </button>
+            </>
+          )}
         </header>
 
         <ul className="seat-menu-list" role="listbox" aria-label="Saved players">

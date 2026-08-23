@@ -88,6 +88,7 @@ type profileInput struct {
 	DisplayName string                 `json:"displayName"`
 	Color       string                 `json:"color"`
 	Background  string                 `json:"background"`
+	Symbol      string                 `json:"symbol"`
 	Card        *models.CardBackground `json:"card"`
 }
 
@@ -111,6 +112,7 @@ func (s *Server) handleCreateProfile(w http.ResponseWriter, r *http.Request) {
 	if background != "color" && background != "image" {
 		f.add("background", `must be "color" or "image"`)
 	}
+	symbol := normalizeSymbol(f, "symbol", in.Symbol)
 	card := validateCard(f, in.Card)
 	if background == "image" && card == nil {
 		f.add("card", "an image background needs a card")
@@ -124,6 +126,7 @@ func (s *Server) handleCreateProfile(w http.ResponseWriter, r *http.Request) {
 		DisplayName: name,
 		Color:       color,
 		Background:  background,
+		Symbol:      symbol,
 		Card:        card,
 		SavedColors: []string{color},
 	})
@@ -169,6 +172,7 @@ func (s *Server) handlePatchProfile(w http.ResponseWriter, r *http.Request) {
 		DisplayName *string                `json:"displayName"`
 		Color       *string                `json:"color"`
 		Background  *string                `json:"background"`
+		Symbol      *string                `json:"symbol"`
 		Card        *models.CardBackground `json:"card"`
 		ClearCard   bool                   `json:"clearCard"`
 	}
@@ -195,6 +199,10 @@ func (s *Server) handlePatchProfile(w http.ResponseWriter, r *http.Request) {
 			f.add("background", `must be "color" or "image"`)
 		}
 		patch.Background = in.Background
+	}
+	if in.Symbol != nil {
+		symbol := normalizeSymbol(f, "symbol", *in.Symbol)
+		patch.Symbol = &symbol
 	}
 	if in.Card != nil {
 		patch.Card = validateCard(f, in.Card)

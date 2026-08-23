@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"os"
+	"regexp"
 	"slices"
 	"testing"
 
@@ -120,6 +122,61 @@ func TestValidateEmail(t *testing.T) {
 		validateEmail(f, in)
 		if len(f) == 0 {
 			t.Errorf("validateEmail(%q) accepted", in)
+		}
+	}
+}
+
+func TestNormalizeSymbol(t *testing.T) {
+	tests := []struct {
+		in      string
+		want    string
+		wantErr bool
+	}{
+		{"crown", "crown", false},
+		{"  gem  ", "gem", false},
+		{"", "", false}, // no preference is legitimate
+		{"Crown", "", true},
+		{"wizard", "", true},
+		{"<script>", "", true},
+	}
+	for _, tc := range tests {
+		f := fieldErrors{}
+		got := normalizeSymbol(f, "symbol", tc.in)
+		if got != tc.want {
+			t.Errorf("normalizeSymbol(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+		if (len(f) > 0) != tc.wantErr {
+			t.Errorf("normalizeSymbol(%q) error = %v, want %v", tc.in, len(f) > 0, tc.wantErr)
+		}
+	}
+}
+
+// The Go allowlist and the frontend icon list have to agree, or a symbol saved
+// in one place renders as nothing in the other.
+func TestValidSymbolsMatchesFrontendIconList(t *testing.T) {
+	src, err := os.ReadFile("../../../frontend/src/game/icons.ts")
+	if err != nil {
+		t.Skipf("frontend sources not available: %v", err)
+	}
+	block := regexp.MustCompile(`PLAYER_SYMBOLS: IconName\[\] = \[([^\]]*)\]`).FindSubmatch(src)
+	if block == nil {
+		t.Fatal("could not find PLAYER_SYMBOLS in icons.ts")
+	}
+	found := map[string]bool{}
+	for _, m := range regexp.MustCompile(`'([a-z]+)'`).FindAllSubmatch(block[1], -1) {
+		found[string(m[1])] = true
+	}
+	if len(found) == 0 {
+		t.Fatal("parsed no symbols from icons.ts")
+	}
+	for name := range found {
+		if !validSymbols[name] {
+			t.Errorf("icons.ts offers %q but the server rejects it", name)
+		}
+	}
+	for name := range validSymbols {
+		if !found[name] {
+			t.Errorf("server accepts %q but icons.ts does not offer it", name)
 		}
 	}
 }

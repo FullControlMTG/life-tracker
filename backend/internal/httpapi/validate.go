@@ -24,6 +24,28 @@ const (
 	maxScryfallIDLn = 64
 )
 
+// validSymbols mirrors PLAYER_SYMBOLS in frontend/src/game/icons.ts. Symbols are
+// rendered by name into an <svg> lookup, so an unknown name would render nothing;
+// keeping this an allowlist means the client never has to guard against that.
+var validSymbols = map[string]bool{
+	"crown": true, "sword": true, "skull": true, "flame": true,
+	"leaf": true, "drop": true, "bolt": true, "star": true,
+	"moon": true, "eye": true, "shield": true, "gem": true,
+}
+
+// normalizeSymbol accepts a known icon name, or empty for "no preference".
+func normalizeSymbol(f fieldErrors, field, symbol string) string {
+	symbol = strings.TrimSpace(symbol)
+	if symbol == "" {
+		return ""
+	}
+	if !validSymbols[symbol] {
+		f.add(field, "unknown symbol")
+		return ""
+	}
+	return symbol
+}
+
 // fieldErrors accumulates per-field validation failures so the client can show
 // them inline instead of one opaque message.
 type fieldErrors map[string]string
