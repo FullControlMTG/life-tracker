@@ -505,8 +505,9 @@ select {
 /* The halves carry no standing +/- glyph. Stacked top/bottom they landed on
    the same spot as the delta badge, and on a tablet - where nothing hovers -
    they only ever appeared once a finger was already down, so they taught
-   nobody anything. Lighting the half that was pressed says the same thing at
-   the moment it is useful, and shows where the tap landed. */
+   nobody anything. Lighting the pressed half says the same thing at the moment
+   it is useful, and the flat fill traces the division exactly, so the lit area
+   is the hit area. */
 .tap-zone {
   position: absolute;
   top: 0;
@@ -514,7 +515,7 @@ select {
   width: 50%;
   z-index: 1;
   color: inherit;
-  background: radial-gradient(ellipse at center, currentColor, transparent 70%);
+  background: currentColor;
   opacity: 0;
   transition: opacity 300ms ease;
 }
@@ -632,13 +633,6 @@ select {
   font-size: clamp(0.9rem, 8cqmin, 2rem);
   font-weight: 600;
   opacity: 0.6;
-}
-
-/* Stacked taps put a thumb over the middle of the top half - exactly where the
-   badge sits when centred. Tucking it into the corner keeps it clear of both
-   the thumb and the numeral, and it fades too quickly to unbalance the face. */
-[data-tap-split='horizontal'] .life-delta {
-  right: 8%;
 }
 
 .seat-counters {
