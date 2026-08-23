@@ -491,7 +491,6 @@ select {
   gap: 0.35rem;
   font-size: clamp(0.7rem, 3cqmin, 1rem);
   font-weight: 600;
-  opacity: 0.85;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

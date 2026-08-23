@@ -100,10 +100,11 @@ export interface AppState {
   rememberColor: (profileId: string, hex: string) => Promise<void>
 }
 
-// Matched luminance (~5:1 against white text), so no seat reads washed out
-// next to another. See readableInk in game/color.ts for the contrast rule.
+// Vivid, and all at one luminance so no seat reads washed out next to another.
+// They sit just under the point where readableInk would flip the text to dark,
+// which is what caps how bright a white-text seat can be.
 const DEFAULT_COLORS = [
-  '#376eae', '#bc3f5e', '#2b7b4c', '#8a52bc', '#8b652c', '#2c7684',
+  '#1c77e0', '#e5294f', '#118a44', '#a44be9', '#a26e14', '#128495',
 ]
 
 const uid = () =>

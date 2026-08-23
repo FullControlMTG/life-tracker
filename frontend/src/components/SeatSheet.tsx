@@ -10,8 +10,8 @@ import { ColorPicker } from './ColorPicker'
 import { CardSearch } from './CardSearch'
 
 const DEFAULT_SWATCHES = [
-  '#376eae', '#bc3f5e', '#2b7b4c', '#8a52bc',
-  '#8b652c', '#2c7684', '#5f6c88', '#aa5431',
+  '#1c77e0', '#e5294f', '#118a44', '#a44be9',
+  '#a26e14', '#128495', '#506ee9', '#ce5019',
 ]
 
 type Tab = 'player' | 'colour' | 'art' | 'counters'

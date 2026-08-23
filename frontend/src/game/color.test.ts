@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import { DARK_INK, LIGHT_INK, contrastRatio, hexToHsl, hslToHex, isHex, readableInk, rgbToHex } from './color'
 
+const SEAT_DEFAULTS = ['#1c77e0', '#e5294f', '#118a44', '#a44be9', '#a26e14', '#128495']
+const SWATCHES = [...SEAT_DEFAULTS, '#506ee9', '#ce5019']
+
 describe('colour', () => {
   it('round-trips hex through hsl within rounding tolerance', () => {
     for (const hex of ['#3b82f6', '#000000', '#ffffff', '#7f1d1d', '#14b8a6']) {
@@ -50,25 +53,28 @@ describe('colour', () => {
     }
   })
 
-  // Defaults are deliberately brighter than the ink rule strictly requires;
-  // this stops a future palette edit from quietly darkening or over-brightening
-  // them. Both palettes are duplicated here on purpose - the test is the
-  // contract, so importing them would let a bad edit pass silently.
-  it('keeps the default palettes bright but readable on white text', () => {
-    const seatDefaults = ['#376eae', '#bc3f5e', '#2b7b4c', '#8a52bc', '#8b652c', '#2c7684']
-    const swatches = [...seatDefaults, '#5f6c88', '#aa5431']
+  // The palettes are duplicated above on purpose - the test is the contract, so
+  // importing them would let a bad edit pass silently.
+  it('keeps every default vivid', () => {
+    for (const hex of SWATCHES) {
+      const { s } = hexToHsl(hex)
+      expect(s, `${hex} is only ${s}% saturated`).toBeGreaterThanOrEqual(70)
+    }
+  })
 
-    for (const hex of swatches) {
-      expect(readableInk(hex), `${hex} should keep white text`).toBe(LIGHT_INK)
+  // Brightness is capped by the ink rule, not by taste: past this point
+  // readableInk flips the seat to dark text, which is a different design.
+  it('keeps every default bright enough to feel lit, but still on white text', () => {
+    for (const hex of SWATCHES) {
+      expect(readableInk(hex), `${hex} would flip to dark text`).toBe(LIGHT_INK)
       const ratio = contrastRatio(hex, LIGHT_INK)
-      expect(ratio, `${hex} is too light for white text (${ratio.toFixed(2)}:1)`).toBeGreaterThan(4.5)
-      expect(ratio, `${hex} is darker than it needs to be (${ratio.toFixed(2)}:1)`).toBeLessThan(6)
+      expect(ratio, `${hex} is darker than it needs to be (${ratio.toFixed(2)}:1)`).toBeLessThan(4.5)
+      expect(ratio, `${hex} is too light for white text (${ratio.toFixed(2)}:1)`).toBeGreaterThan(4)
     }
   })
 
   it('gives every seat default the same weight so none reads washed out', () => {
-    const seatDefaults = ['#376eae', '#bc3f5e', '#2b7b4c', '#8a52bc', '#8b652c', '#2c7684']
-    const ratios = seatDefaults.map((hex) => contrastRatio(hex, LIGHT_INK))
+    const ratios = SEAT_DEFAULTS.map((hex) => contrastRatio(hex, LIGHT_INK))
     expect(Math.max(...ratios) - Math.min(...ratios)).toBeLessThan(0.3)
   })
 
