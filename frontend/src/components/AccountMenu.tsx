@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { ApiError } from '../api/types'
 import { useStore } from '../state/store'
+import { useFullscreen } from './useFullscreen'
 
 /**
  * The only chrome that sits over the game: one small button in the top-right
@@ -26,6 +27,7 @@ export function AccountMenu() {
   }, [open])
 
   const { auth, phase, logout, newGame, restartGame } = useStore()
+  const fullscreen = useFullscreen()
 
   return (
     <div className="account" ref={wrap}>
@@ -41,6 +43,15 @@ export function AccountMenu() {
 
       {open && (
         <div className="account-panel" role="menu">
+          {/* Not offered on iPhone Safari, which has no fullscreen API. */}
+          {fullscreen.supported && (
+            <div className="panel-group">
+              <button className="btn subtle wide" onClick={fullscreen.toggle}>
+                {fullscreen.active ? 'Exit fullscreen' : 'Enter fullscreen'}
+              </button>
+            </div>
+          )}
+
           {phase === 'game' && (
             <div className="panel-group">
               <button className="btn subtle wide" onClick={() => { restartGame(); setOpen(false) }}>

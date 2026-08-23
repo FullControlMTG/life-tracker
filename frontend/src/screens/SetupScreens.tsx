@@ -99,11 +99,6 @@ export function LayoutScreen() {
 
   return (
     <Step title="How is everyone sat?" step={3}>
-      <p className="step-note">
-        The arrow shows which way each player’s numbers face. The screen only ever splits at right
-        angles, so every player gets a rectangle against the edge they’re sitting at.
-      </p>
-
       <div className="layout-grid">
         {presets.map((preset) => (
           <button
