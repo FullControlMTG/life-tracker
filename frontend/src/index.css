@@ -650,6 +650,58 @@ select {
   cursor: default;
 }
 
+/* --- select -------------------------------------------------------------- */
+
+.select {
+  position: relative;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-placeholder {
+  color: var(--ink-dim);
+}
+
+.select-caret {
+  font-size: 0.7rem;
+  color: var(--ink-dim);
+  flex: none;
+}
+
+.select-list {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0.2rem;
+  max-height: 11rem;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.select-option {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border-radius: 7px;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.select-option:hover {
+  background: var(--raise);
+}
+
+.select-option.is-active {
+  background: rgba(125, 211, 252, 0.18);
+}
+
 /* --- colour picker ------------------------------------------------------- */
 
 .picker {

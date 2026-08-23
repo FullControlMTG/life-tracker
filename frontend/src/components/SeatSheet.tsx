@@ -8,6 +8,7 @@ import { Icon } from './Icon'
 import { ROTATION } from '../game/layout'
 import { ColorPicker } from './ColorPicker'
 import { CardSearch } from './CardSearch'
+import { Select } from './Select'
 
 const DEFAULT_SWATCHES = [
   '#1c77e0', '#e5294f', '#118a44', '#a44be9',
@@ -84,19 +85,20 @@ export function SeatSheet({ seat, onClose }: { seat: SeatState; onClose: () => v
 
 function PlayerTab({ seat }: { seat: SeatState }) {
   const { auth, remote, applyProfile, setSeatName, createProfileFromSeat, adjustLife } = useStore()
-  const [newName, setNewName] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const profiles = remote?.profiles ?? []
 
+  const authed = auth.status === 'authed'
+  const profiles = remote?.profiles ?? []
+  const trimmedName = seat.name.trim()
+
+  // Saving reuses the seat's own name rather than asking for it twice.
   const saveProfile = async () => {
-    const name = newName.trim()
-    if (!name) return
+    if (!trimmedName) return
     setBusy(true)
     setError('')
     try {
-      await createProfileFromSeat(seat.id, name)
-      setNewName('')
+      await createProfileFromSeat(seat.id, trimmedName)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save that player.')
     } finally {
@@ -106,26 +108,20 @@ function PlayerTab({ seat }: { seat: SeatState }) {
 
   return (
     <>
-      {auth.status === 'authed' && (
-        <label className="field-row">
+      {authed && profiles.length > 0 && (
+        <div className="field-row">
           <span>Load a player</span>
-          <select
-            className="field"
+          <Select
+            label="Load a player"
             value={seat.profileId ?? ''}
-            onChange={(e) => applyProfile(seat.id, e.target.value || null)}
-          >
-            <option value="">— none —</option>
-            {profiles.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.displayName}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={profiles.map((p) => ({ value: p.id, label: p.displayName }))}
+            onChange={(id) => applyProfile(seat.id, id || null)}
+          />
+        </div>
       )}
 
       <label className="field-row">
-        <span>Name on this seat</span>
+        <span>Name this seat</span>
         <input
           className="field"
           value={seat.name}
@@ -134,21 +130,11 @@ function PlayerTab({ seat }: { seat: SeatState }) {
         />
       </label>
 
-      {auth.status === 'authed' && !seat.profileId && (
+      {authed && !seat.profileId && (
         <div className="field-row">
-          <span>Save this seat as a player</span>
-          <div className="inline">
-            <input
-              className="field"
-              placeholder="Their name"
-              value={newName}
-              maxLength={40}
-              onChange={(e) => setNewName(e.target.value)}
-            />
-            <button className="btn" disabled={busy || !newName.trim()} onClick={saveProfile}>
-              Save
-            </button>
-          </div>
+          <button className="btn wide" disabled={busy || !trimmedName} onClick={saveProfile}>
+            {trimmedName ? `Save “${trimmedName}” as a player` : 'Name the seat to save them'}
+          </button>
           {error && <p className="error">{error}</p>}
         </div>
       )}

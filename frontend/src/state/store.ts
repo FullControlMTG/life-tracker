@@ -134,6 +134,29 @@ function buildSeats(config: GameConfig, previous: SeatState[] = []): SeatState[]
   })
 }
 
+/**
+ * Resets any seat occupied by `profileId` back to an unclaimed seat.
+ *
+ * Deleting a saved player has to take them off the table too. Clearing only the
+ * id would leave their name, colour and artwork still playing under a profile
+ * that no longer exists. Life totals and counters are deliberately kept - the
+ * game is still in progress, only the identity is gone.
+ */
+export function clearProfileFromSeats(seats: SeatState[], profileId: string): SeatState[] {
+  return seats.map((seat, i) =>
+    seat.profileId === profileId
+      ? {
+          ...seat,
+          profileId: null,
+          name: `Player ${i + 1}`,
+          color: DEFAULT_COLORS[i % DEFAULT_COLORS.length],
+          background: 'color' as const,
+          card: null,
+        }
+      : seat,
+  )
+}
+
 /** Timers that clear the transient life-change badge, kept out of state. */
 const deltaTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
@@ -331,7 +354,7 @@ export const useStore = create<AppState>()(
             remote: state.remote
               ? { ...state.remote, profiles: state.remote.profiles.filter((p) => p.id !== id) }
               : null,
-            seats: state.seats.map((s) => (s.profileId === id ? { ...s, profileId: null } : s)),
+            seats: clearProfileFromSeats(state.seats, id),
           }))
         },
 
