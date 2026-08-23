@@ -1201,18 +1201,37 @@ select {
 }
 
 .outcome {
-  display: grid;
-  place-items: center;
-  gap: 0.2rem;
-  padding: 0.9rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 0.9rem 0.7rem;
   border-radius: 12px;
   background: rgba(125, 211, 252, 0.12);
   border: 1px solid rgba(125, 211, 252, 0.35);
 }
 
+/* Dice read like dice on a table: scan the faces, not a list of numbers. */
+.outcome-faces {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.outcome-side {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding-left: 0.9rem;
+  border-left: 1px solid rgba(125, 211, 252, 0.3);
+  flex: none;
+}
+
 .outcome-total {
   font-family: var(--numerals);
-  font-size: clamp(2.4rem, 11vmin, 4rem);
+  font-size: clamp(2rem, 9vmin, 3.4rem);
   font-weight: 650;
   line-height: 1;
 }
@@ -1221,6 +1240,62 @@ select {
   font-size: 0.82rem;
   color: var(--ink-dim);
   text-align: center;
+}
+
+/* One die is the result, so it is shown large; a handful shrink to fit. */
+.die-face,
+.coin-face {
+  width: clamp(2.1rem, 9vmin, 3.1rem);
+  height: clamp(2.1rem, 9vmin, 3.1rem);
+  flex: none;
+}
+
+.outcome-faces:has(> :only-child) .die-face,
+.outcome-faces:has(> :only-child) .coin-face {
+  width: clamp(3.5rem, 16vmin, 5.5rem);
+  height: clamp(3.5rem, 16vmin, 5.5rem);
+}
+
+.die-face {
+  color: var(--accent);
+}
+
+.die-edge {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.die-value {
+  fill: #05202e;
+  font-family: var(--numerals);
+  font-weight: 700;
+}
+
+.coin-rim {
+  fill: #b8860b;
+}
+
+.coin-face.is-tails .coin-rim {
+  fill: #8a8f98;
+}
+
+.coin-mill {
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 3;
+}
+
+.coin-field {
+  fill: #e0a83c;
+}
+
+.coin-face.is-tails .coin-field {
+  fill: #c7ccd4;
+}
+
+.coin-mark {
+  fill: rgba(0, 0, 0, 0.55);
 }
 
 /* --- account menu -------------------------------------------------------- */

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useStore } from '../state/store'
 import { DICE, MAX_ROLL_COUNT, flipCoins, rollDice } from '../game/random'
 import type { Die, FlipResult, RollResult } from '../game/random'
+import { CoinFace, DieFace } from './RollAssets'
 
 type Outcome =
   | { kind: 'roll'; result: RollResult }
@@ -120,21 +121,44 @@ function Outcome({ outcome }: { outcome: NonNullable<Outcome> }) {
     const { die, faces, total } = outcome.result
     return (
       <div className="outcome" role="status" aria-live="polite">
-        <span className="outcome-total">{total}</span>
-        <span className="outcome-detail">
-          {faces.length}d{die}
-          {faces.length > 1 && <> · {faces.join(' + ')}</>}
-        </span>
+        <div className="outcome-faces">
+          {faces.map((f, i) => (
+            <DieFace key={i} value={f} label={`die ${i + 1} rolled ${f}`} />
+          ))}
+        </div>
+        {faces.length > 1 && (
+          <div className="outcome-side">
+            <span className="outcome-total">{total}</span>
+            <span className="outcome-detail">
+              {faces.length}d{die}
+            </span>
+          </div>
+        )}
+        {faces.length === 1 && <span className="outcome-detail">d{die}</span>}
       </div>
     )
   }
+
   const { faces, heads, tails } = outcome.result
   return (
     <div className="outcome" role="status" aria-live="polite">
-      <span className="outcome-total">{faces.length === 1 ? (heads ? 'Heads' : 'Tails') : `${heads}–${tails}`}</span>
-      <span className="outcome-detail">
-        {faces.length === 1 ? 'coin flip' : `${heads} heads, ${tails} tails`}
-      </span>
+      <div className="outcome-faces">
+        {faces.map((f, i) => (
+          <CoinFace key={i} side={f} />
+        ))}
+      </div>
+      {faces.length > 1 ? (
+        <div className="outcome-side">
+          <span className="outcome-total">
+            {heads}–{tails}
+          </span>
+          <span className="outcome-detail">
+            {heads} heads, {tails} tails
+          </span>
+        </div>
+      ) : (
+        <span className="outcome-detail">{heads ? 'Heads' : 'Tails'}</span>
+      )}
     </div>
   )
 }
